@@ -1,0 +1,14 @@
+rules_version = '2';
+
+// Forge OS — file blobs live under users/{uid}/… and are accessible only by
+// that authenticated user.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /users/{uid}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
