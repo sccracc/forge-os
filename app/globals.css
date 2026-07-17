@@ -583,6 +583,21 @@ h4 {
   font-size: 12.5px;
   color: var(--text-dim);
 }
+/* Dots-only variant (chat "generating"): without label text the pill loses
+   its line-box height and looks squished — restore comfortable proportions
+   and give the bounce room. */
+.status-chip.dots-only {
+  min-height: 31px;
+  padding: 0 16px;
+  justify-content: center;
+}
+.status-chip.dots-only .typing-dots {
+  gap: 5px;
+}
+.status-chip.dots-only .typing-dots i {
+  width: 7px;
+  height: 7px;
+}
 .status-chip .dot {
   width: 6px;
   height: 6px;

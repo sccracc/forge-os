@@ -113,7 +113,7 @@ export function StreamingMessage({
           analyzingImage ? (
             <AnalyzingImage />
           ) : (
-            <div className="status-chip" aria-live="polite" aria-label="Generating">
+            <div className="status-chip dots-only" aria-live="polite" aria-label="Generating">
               <TypingDots />
             </div>
           )
