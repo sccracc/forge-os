@@ -39,26 +39,23 @@ export function imageModelForPlan(plan: string | undefined, mode: SiliconFlowIma
     : SILICONFLOW_TEXT_IMAGE_STARTER_PRO_MODEL;
 }
 
+// Provider secrecy: these messages reach the client (GeneratedImageErrorCard
+// renders them verbatim), so they must never name the underlying vendor or
+// forward raw upstream error text. The raw detail is logged server-side where
+// the caller already logs status + body; keep the operator hint in the log only.
 function friendlySiliconFlowError(status: number, detail?: string): Error {
+  if (detail) console.error("[imagegen] upstream error", status, detail);
   if (status === 401) {
-    return new Error(
-      "SiliconFlow rejected the API key. Make sure the Vercel value is the raw key from the same SiliconFlow account, then redeploy."
-    );
+    return new Error("Image generation isn't fully configured on this deployment.");
   }
   if (status === 422) {
-    return new Error(detail || "SiliconFlow rejected the image prompt or parameters.");
+    return new Error("The image prompt was rejected. Try rephrasing it.");
   }
   if (status === 429) return new Error("Image generation is busy right now. Please try again shortly.");
   if (status >= 500) {
-    // Surface SiliconFlow's own reason when it sends one — a 5xx on a premium
-    // model is usually balance / model-access / verification, not a real outage.
-    return new Error(
-      detail
-        ? `Image generation failed (SiliconFlow ${status}): ${detail}`
-        : "SiliconFlow is temporarily unavailable. Please try again."
-    );
+    return new Error("Image generation is temporarily unavailable. Please try again.");
   }
-  return new Error(detail || "Image generation failed. Please try again.");
+  return new Error("Image generation failed. Please try again.");
 }
 
 export function siliconFlowApiKey(): string | undefined {
@@ -138,7 +135,7 @@ async function attemptGenerate(
     try {
       response = await postSiliconFlowImage(SILICONFLOW_IMAGE_URLS[i], apiKey, model, prompt, options);
     } catch {
-      lastError = new Error("Could not reach SiliconFlow for image generation. Please try again.");
+      lastError = new Error("Could not reach the image generation service. Please try again.");
       continue;
     }
 
@@ -164,7 +161,7 @@ async function attemptGenerate(
     }
 
     const imageUrl = json ? firstImageUrl(json) : undefined;
-    if (!imageUrl) return { error: new Error("SiliconFlow did not return an image URL. Please try again.") };
+    if (!imageUrl) return { error: new Error("Image generation didn't return an image. Please try again.") };
     return { url: imageUrl };
   }
 

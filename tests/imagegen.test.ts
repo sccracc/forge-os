@@ -151,7 +151,7 @@ describe("SiliconFlow image generation", () => {
         inputImageBase64: "ZmFrZQ==",
         inputMimeType: "image/png",
       })
-    ).rejects.toThrow(/SiliconFlow 500/);
+    ).rejects.toThrow(/temporarily unavailable/i);
 
     // Edit failure must not silently retry as a text-to-image generation.
     expect(fetch).toHaveBeenCalledTimes(1);
@@ -232,12 +232,16 @@ describe("SiliconFlow image generation", () => {
     await expect(generateImage("a city")).rejects.toThrow("Image generation is not configured.");
   });
 
-  it("throws an actionable error when SiliconFlow rejects the key", async () => {
+  it("throws a provider-free error when the upstream rejects the key", async () => {
     mockImageResponse({ error: { message: "Unauthorized" } }, 401);
 
-    await expect(generateImage("a city")).rejects.toThrow(
-      "SiliconFlow rejected the API key. Make sure the Vercel value is the raw key from the same SiliconFlow account, then redeploy."
+    const err = await generateImage("a city").catch((e: Error) => e);
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error).message).toBe(
+      "Image generation isn't fully configured on this deployment."
     );
+    // Provider-secrecy invariant: client-visible errors never name the vendor.
+    expect((err as Error).message).not.toMatch(/siliconflow|flux|z-image/i);
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 

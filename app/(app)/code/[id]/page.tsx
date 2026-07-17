@@ -74,7 +74,7 @@ export default function ProjectIDEPage() {
       } catch {
         toast.success("Published");
       }
-      window.open(url, "_blank");
+      window.open(url, "_blank", "noopener,noreferrer");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Couldn't publish");
     } finally {

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireUser, isResponse } from "@/lib/supabase/route-helpers";
+import { requireUser, isResponse, jsonError } from "@/lib/supabase/route-helpers";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { loadProfile } from "@/lib/supabase/profile-server";
 import { profilePatchToRows } from "@/lib/supabase/mappers";
@@ -18,6 +18,14 @@ export async function PATCH(req: NextRequest) {
   if (isResponse(user)) return user;
 
   const patch = (await req.json().catch(() => ({}))) as Partial<UserProfile>;
+  // Hard caps on free-text fields that get injected into every future system
+  // prompt (uncapped, they'd be an unmetered cost vector).
+  if (typeof patch.customAbout === "string" && patch.customAbout.length > 4_000)
+    return jsonError("customAbout too long (max 4,000 characters)", 400);
+  if (typeof patch.customStyle === "string" && patch.customStyle.length > 4_000)
+    return jsonError("customStyle too long (max 4,000 characters)", 400);
+  if (typeof patch.memoryProfile === "string" && patch.memoryProfile.length > 24_000)
+    return jsonError("memoryProfile too long (max 24,000 characters)", 400);
   const { users, settings } = profilePatchToRows(patch);
   const now = new Date().toISOString();
 

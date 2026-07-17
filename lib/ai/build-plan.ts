@@ -88,6 +88,31 @@ export function parseBuildPlan(text: string): BuildPlan | null {
   return { summary, steps, checklist, assumptions };
 }
 
+/** Human/model-readable rendering of an acceptance checklist (for the
+ *  Verifier's brief — every item is a gate the implementation must satisfy). */
+export function checklistToPrompt(checks: PlanCheck[]): string {
+  return checks
+    .map((c) => {
+      switch (c.type) {
+        case "file_exists":
+          return `- file exists: ${c.path}`;
+        case "contains":
+          return `- ${c.path} matches /${c.pattern}/i`;
+        case "contains_any":
+          return `- some project file matches /${c.pattern}/i`;
+        case "absent_everywhere":
+          return `- NO project file matches /${c.pattern}/i`;
+        case "page_count":
+          return `- project has ${c.count} HTML page${c.count === 1 ? "" : "s"}`;
+        case "dom_has":
+          return `- rendered page contains a <${c.element}>`;
+        case "smoke":
+          return `- smoke test passes: ${c.label}`;
+      }
+    })
+    .join("\n");
+}
+
 /** Format the plan as context the execution pass must follow. */
 export function planToContext(plan: BuildPlan): string {
   const steps = plan.steps.length

@@ -1,1 +1,0 @@
-update users set plan = 'ultra' where id = 'SaAyXhJWwnZ9KZn4byPT3WC4E3n1';

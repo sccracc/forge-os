@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
-import { requireUser, isResponse, readJson, jsonError } from "@/lib/supabase/route-helpers";
+import { requireUser, isResponse, readJson, jsonError, projectsOwnedBy } from "@/lib/supabase/route-helpers";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { fileToInsert, filePatchToUpdate } from "@/lib/supabase/mappers";
+import { checkWritePath } from "@/lib/code/path-safety";
 import type { FileDoc } from "@/lib/data/types";
 
 export const runtime = "nodejs";
@@ -22,14 +23,29 @@ export async function POST(req: NextRequest) {
   const { inserts, updates, deletes } = await readJson<BulkBody>(req);
 
   if (inserts && inserts.length) {
+    // Server-side path gate + parent-ownership check on every insert.
+    const normalized: FileDoc[] = [];
+    for (const f of inserts) {
+      const check = checkWritePath(f.path);
+      if (!check.ok) return jsonError(`invalid path "${f.path}": ${check.reason}`, 400);
+      normalized.push({ ...f, path: check.path });
+    }
+    if (!(await projectsOwnedBy(user.uid, normalized.map((f) => f.projectId)))) {
+      return jsonError("not found", 404);
+    }
     const { error } = await supabaseAdmin
       .from("files")
-      .insert(inserts.map((f) => fileToInsert(f, user.uid)));
+      .insert(normalized.map((f) => fileToInsert(f, user.uid)));
     if (error) return jsonError(error.message, 500);
   }
 
   if (updates && updates.length) {
     for (const u of updates) {
+      if (typeof u.patch.path === "string") {
+        const check = checkWritePath(u.patch.path);
+        if (!check.ok) return jsonError(`invalid path "${u.patch.path}": ${check.reason}`, 400);
+        u.patch.path = check.path;
+      }
       const patch = filePatchToUpdate(u.patch);
       if (!Object.keys(patch).length) continue;
       const { error } = await supabaseAdmin

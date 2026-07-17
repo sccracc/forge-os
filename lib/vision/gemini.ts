@@ -46,21 +46,21 @@ function buildVisionPrompt(
     .join("\n");
 }
 
+// Provider secrecy: these errors can reach the client verbatim (the chat route
+// forwards err.message), so they must never name the underlying vendor or
+// forward raw upstream error text. The raw detail is logged server-side only.
 function errorForStatus(status: number, detail?: string): Error {
+  if (detail) console.error("[vision] upstream error", status, detail);
   if (status === 400) {
-    return new Error(
-      detail || "Gemini could not analyze this image. Check that the image data is valid."
-    );
+    return new Error("Forge couldn't analyze this image. Check that the image is valid and try again.");
   }
   if (status === 403) {
-    return new Error(
-      detail || "Gemini rejected the image request. Make sure the Gemini API is enabled."
-    );
+    return new Error("Image understanding isn't fully configured on this deployment.");
   }
   if (status === 429) {
-    return new Error("Gemini image analysis is rate limited right now. Please try again shortly.");
+    return new Error("Image analysis is rate limited right now. Please try again shortly.");
   }
-  return new Error(detail || "Gemini image analysis failed. Please try again.");
+  return new Error("Image analysis failed. Please try again.");
 }
 
 /**
@@ -95,7 +95,7 @@ export async function analyzeImages(
       body: JSON.stringify({ contents: [{ parts }] }),
     });
   } catch {
-    throw new Error("Could not reach Gemini for image analysis. Please try again.");
+    throw new Error("Could not reach the image analysis service. Please try again.");
   }
 
   let json: GeminiGenerateContentResponse | null = null;
@@ -111,7 +111,7 @@ export async function analyzeImages(
 
   const text = json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
   if (!text) {
-    throw new Error("Gemini did not return an image description. Please try again.");
+    throw new Error("Forge couldn't produce an image description. Please try again.");
   }
 
   return text;

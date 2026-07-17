@@ -26,8 +26,16 @@ const schema = z.object({
 });
 
 /** Instruction Inspector — returns the exact merged system prompt for the
- *  current context so the user can see why Forge behaves as it does. */
+ *  current context so the user can see why Forge behaves as it does.
+ *
+ *  Debug tool: exposes the full internal prompt stack (skills, memory, project
+ *  rules, hidden directives), so it ships DISABLED and must be explicitly
+ *  enabled per-deployment via NEXT_PUBLIC_FORGE_INSPECTOR=1 (the same flag
+ *  hides/shows the command-palette entry). */
 export async function POST(req: NextRequest) {
+  if (process.env.NEXT_PUBLIC_FORGE_INSPECTOR !== "1") {
+    return jsonError("not found", 404);
+  }
   let user;
   try {
     user = await verifyRequest(req);

@@ -63,7 +63,7 @@ import { createAgentRunLog } from "@/lib/code/agent-log";
 import { buildDiffs, formatDiffsForPrompt } from "@/lib/code/diff";
 import { parseVerdict, formatVerdictForFix, sortIssues, type Verdict } from "@/lib/code/verdict";
 import { filterSafeOps } from "@/lib/code/path-safety";
-import { parseBuildPlan, planToContext, type BuildPlan } from "@/lib/ai/build-plan";
+import { parseBuildPlan, planToContext, checklistToPrompt, type BuildPlan } from "@/lib/ai/build-plan";
 import { detectFabricatedData } from "@/lib/code/fabrication";
 import { impliedChecksForBuildRequest, impliedChecksToPrompt } from "@/lib/code/implied-checks";
 import { extractRenames, staleTermFiles } from "@/lib/code/consistency";
@@ -639,12 +639,16 @@ export function BuildDock({
     // Retrieval-first context: rank the project's files by relevance to the
     // request and spend the budget on the most relevant first (tree always
     // included; the rest summarized). Far better signal than dumping everything.
+    // Once a plan exists, the files it says it will edit are ALWAYS inlined in
+    // full (mustInclude) — editing against a summary is how hunks go wrong.
     let retrievalLogged = false;
+    let planFilePaths: string[] = [];
     const makeContext = (projectFiles: FileDoc[]): string => {
       const r = buildRetrievalContext(toRetrievalFiles(projectFiles), text, {
         budgetBytes: effortProfile.retrievalBudgetBytes,
         maxFullFiles: effortProfile.retrievalMaxFullFiles,
         neighborDepth: effortProfile.retrievalNeighborDepth,
+        mustInclude: planFilePaths,
       });
       if (!retrievalLogged) {
         log.retrieval(r.includedFull, r.summarized);
@@ -760,6 +764,8 @@ export function BuildDock({
           if (plan && impliedChecks.length) {
             plan = { ...plan, checklist: [...plan.checklist, ...impliedChecks] };
           }
+          // Files the plan intends to touch are inlined in full from here on.
+          if (plan) planFilePaths = plan.steps.flatMap((s) => s.files ?? []);
         } catch {
           plan = null; // timed out or errored → proceed without a plan
         } finally {
@@ -877,8 +883,14 @@ export function BuildDock({
       let correctivePasses = 0;
 
       // Fast, time-boxed corrective pass; writes changes, refreshes `current`,
-      // tracks touched files, and returns the ops it applied.
-      const runCorrective = async (userMsg: string): Promise<ResolvedOp[]> => {
+      // tracks touched files, and returns the ops it applied. Every corrective
+      // carries the build's running state (request, plan, files changed so
+      // far) so the fixer is never an amnesiac one-shot, and complex fixes can
+      // run above "low" effort via opts.
+      const runCorrective = async (
+        userMsg: string,
+        opts?: { effort?: EffortId }
+      ): Promise<ResolvedOp[]> => {
         if (correctivePasses >= effortProfile.maxCorrectivePasses) {
           log.record("fix", { ok: false, detail: "corrective pass budget reached" });
           return [];
@@ -897,10 +909,20 @@ export function BuildDock({
         // 45s — cutting it off produces a truncated, unclosed block that applies
         // NOTHING, which is exactly what made the loop spin without converging.
         const timer = setTimeout(() => cAc.abort(), 150_000);
+        const stateBlock = [
+          userMsg.includes(text) ? null : `Original user request: ${text}`,
+          plan?.summary ? `Approved plan goal: ${plan.summary}` : null,
+          touchedPaths.size
+            ? `Files this build has already changed: ${[...touchedPaths].join(", ")}`
+            : null,
+        ]
+          .filter(Boolean)
+          .join("\n");
+        const fullMsg = stateBlock ? `${userMsg}\n\n---\nBuild state (for context):\n${stateBlock}` : userMsg;
         try {
-          const out = await streamChat([{ role: "user", content: userMsg }], current, () => {}, {
+          const out = await streamChat([{ role: "user", content: fullMsg }], current, () => {}, {
             signal: cAc.signal,
-            effort: "low",
+            effort: opts?.effort ?? "low",
             thinking: false,
           });
           // Same safety net as the main pass: a corrective must never wipe a
@@ -1013,6 +1035,31 @@ export function BuildDock({
         recoveredFromNoFileOps = (await runCorrective(buildNoAppliedDiffFixPrompt(text, mainOps.length))).length > 0;
       }
 
+      // ---- Plan-completion gate: planned NEW files that never materialized get
+      // a forced creation pass. The approved plan is a contract, not a
+      // suggestion — "did half the plan" must never be reported as done.
+      if (plan && plan.steps.length && !ac.signal.aborted) {
+        const currentMap = mapContents(current);
+        const plannedMissing = [...new Set(plan.steps.flatMap((s) => s.files ?? []))].filter(
+          (p) => !beforeMap.has(p) && !currentMap.has(p)
+        );
+        if (plannedMissing.length) {
+          showProgress("fixing");
+          log.record("fix", {
+            ok: false,
+            detail: `plan gap: ${plannedMissing.length} planned file(s) never created`,
+            files: plannedMissing,
+          });
+          await runCorrective(
+            [
+              `The approved plan requires creating these files, but they do NOT exist in the project yet: ${plannedMissing.join(", ")}.`,
+              "Create each of them now with a complete ```path=<path> block, and emit any small ```edit= hunks needed to wire them in (script/link tags, imports, nav links).",
+              planToContext(plan),
+            ].join("\n\n")
+          );
+        }
+      }
+
       // ---- Backstop 1: faked / over-claimed bulk data → force a real runtime fetch.
       const fabReason = detectFabricatedData(mainProse, codeOf(current));
       let fabApplied = false;
@@ -1046,13 +1093,18 @@ export function BuildDock({
       const checklist = plan?.checklist ?? impliedChecks;
       const codeFiles = () => current.filter((f) => f.kind === "file");
       refreshTouched();
-      const shouldRunStrictRequestReview = false;
+      // The strict Verifier→Fixer loop (below) is the request-satisfaction
+      // gate. The standalone errors-only heal here is the FALLBACK when strict
+      // review is disabled for the effort tier — never both.
+      const shouldRunStrictRequestReview = effortProfile.strictReview;
 
-      if (touchedPaths.size > 0 && !ac.signal.aborted && canRuntime) {
+      if (!shouldRunStrictRequestReview && touchedPaths.size > 0 && !ac.signal.aborted && canRuntime) {
         showProgress("validating", { cycle: 1, maxCycles: 1 });
         const endVal = log.begin("validate", "final runtime check");
         try {
-          let report = await runVerification(codeFiles(), verifyMode, []);
+          // The plan's acceptance checklist is enforced here — it's the
+          // machine-checkable contract the plan promised the user.
+          let report = await runVerification(codeFiles(), verifyMode, checklist);
           reviewDone = true;
           endVal({ ok: report.ok, verify: { ok: report.ok, issues: report.issues.length } });
 
@@ -1073,7 +1125,7 @@ export function BuildDock({
             const endHeal = log.begin("heal", `runtime fix ${heals}/${effortProfile.verifyHeals}`);
             const fixed = await runCorrective(`${BUILD_VERIFY_FIX}\n\n${formatIssuesForFix(report.issues)}`);
             showProgress("validating");
-            report = await runVerification(codeFiles(), verifyMode, []);
+            report = await runVerification(codeFiles(), verifyMode, checklist);
             endHeal({ ok: report.ok, verify: { ok: report.ok, issues: report.issues.length } });
             if (fixed.length === 0) break; // applied nothing → can't make progress
           }
@@ -1115,9 +1167,12 @@ export function BuildDock({
           const msg = [
             `Original user request: ${text}`,
             plan ? `Approved plan:\n${planToContext(plan)}` : null,
+            checklist.length
+              ? `ACCEPTANCE CHECKLIST — every item must be satisfied; each unmet item is at least a major issue:\n${checklistToPrompt(checklist)}`
+              : null,
             `Unified diffs of everything that changed in this build:\n${diffText}`,
             runtimeNote,
-            "Audit the implementation against the request and the diffs now. Return your forge-verdict.",
+            "Audit the implementation against the request, the checklist, and the diffs now. Return your forge-verdict.",
           ]
             .filter(Boolean)
             .join("\n\n---\n\n");
@@ -1139,6 +1194,10 @@ export function BuildDock({
       let firstIssueCount = 0; // issues found on the first review (for the recap)
       let prevIssueCount: number | null = null;
       let cyclesRun = 0;
+      // Evidence ledger for the final recap: the LAST runtime validation's real
+      // results. The closing "verified" claim is rendered from THIS, never from
+      // the model's own narrative.
+      let lastRuntimeIssues: VerifyIssue[] = [];
       // Convergence guards so the loop never grinds all 12 cycles on diminishing
       // returns (the #1 cause of 15-minute, churning runs): stop early when the
       // fixer makes no progress, the issue count stops improving, or we blow a
@@ -1175,6 +1234,7 @@ export function BuildDock({
             } catch {
               /* runtime validation is best-effort */
             }
+            lastRuntimeIssues = runtimeIssues;
             endVal({ ok: runtimeOk, verify: { ok: runtimeOk, issues: runtimeIssues.length } });
           }
 
@@ -1251,7 +1311,9 @@ export function BuildDock({
           ]
             .filter(Boolean)
             .join("\n\n---\n\n");
-          const fixedOps = await runCorrective(fixMsg);
+          // Fixer runs above "low": it's consuming a structured verdict and
+          // must reason about root causes, not just pattern-match a fix.
+          const fixedOps = await runCorrective(fixMsg, { effort: "medium" });
           endFix({ ok: fixedOps.length > 0, files: fixedOps.map((o) => o.path) });
           // The fixer applied nothing (timed out / emitted no valid blocks) → it
           // can't make progress, so stop rather than re-reviewing the same files.
@@ -1259,28 +1321,43 @@ export function BuildDock({
         }
         reviewDone = cyclesRun > 0; // the Verifier loop IS the review now
 
-        // Conversational closing recap — what was reviewed, fixed, and verified.
+        // Evidence-based closing recap. The "verified" claim is computed from
+        // the REAL last validation results + verdict — never from the model's
+        // own narrative (a loop that exits on stagnation/budget with runtime
+        // failures still open must not read as a clean pass).
         const openIssues = finalVerdict && finalVerdict.status === "fail" ? finalVerdict.issues : [];
         const fixedCount = Math.max(0, firstIssueCount - openIssues.length);
-        if (openIssues.length === 0) {
+        const checksFailed = lastRuntimeIssues.filter((i) => i.kind === "check").length;
+        const runtimeErrs = lastRuntimeIssues.filter((i) => i.kind !== "check");
+        const checksTotal = checklist.length;
+        const evidence =
+          canRuntime && checksTotal
+            ? checksFailed === 0
+              ? ` All ${checksTotal} acceptance check${checksTotal === 1 ? "" : "s"} pass.`
+              : ` ${checksTotal - checksFailed}/${checksTotal} acceptance checks pass.`
+            : "";
+        if (openIssues.length === 0 && runtimeErrs.length === 0 && checksFailed === 0) {
           const fixedNote =
             firstIssueCount > 0
               ? ` I caught and fixed ${firstIssueCount} issue${firstIssueCount === 1 ? "" : "s"} along the way`
               : "";
           verifyNote = canRuntime
-            ? `**Reviewed and verified.**${fixedNote} — it compiles, runs clean, and passes the full review. ✓`
+            ? `**Reviewed and verified.**${fixedNote} — it compiles, runs clean, and passes the full review.${evidence} ✓`
             : `**Reviewed and verified.**${fixedNote} — it passes the full implementation review. ✓`;
         } else {
-          const list = sortIssues(openIssues)
-            .slice(0, 3)
-            .map((i) => `**${i.title}** — ${i.fix || i.detail}`)
-            .join("\n- ");
+          const remaining = [
+            ...runtimeErrs.slice(0, 2).map((i) => `**${i.path ?? "runtime"}** — ${i.message}`),
+            ...sortIssues(openIssues)
+              .slice(0, 3)
+              .map((i) => `**${i.title}** — ${i.fix || i.detail}`),
+          ];
+          const remainingCount = openIssues.length + runtimeErrs.length + checksFailed;
           const fixedNote = fixedCount > 0 ? `Fixed ${fixedCount} of ${firstIssueCount} issues. ` : "";
           const passWord = cyclesRun === 1 ? "pass" : "passes";
           const stopNote = stoppedForBudget
             ? ` I stopped here to keep this build within your usage budget (~${Math.round(spentForgeTokens / 1000)}k tokens)`
             : "";
-          verifyNote = `**Reviewed over ${cyclesRun} ${passWord}.** ${fixedNote}${openIssues.length} item${openIssues.length === 1 ? "" : "s"} I'd still flag:\n- ${list}${stopNote ? `\n\n${stopNote.trim()}.` : ""}\n\nWant me to keep going on ${openIssues.length === 1 ? "it" : "these"}?`;
+          verifyNote = `**Reviewed over ${cyclesRun} ${passWord}.** ${fixedNote}${remainingCount} item${remainingCount === 1 ? "" : "s"} I'd still flag:\n- ${remaining.join("\n- ")}${evidence}${stopNote ? `\n\n${stopNote.trim()}.` : ""}\n\nWant me to keep going on ${remainingCount === 1 ? "it" : "these"}?`;
         }
       }
 

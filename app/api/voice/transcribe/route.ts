@@ -69,7 +69,13 @@ export async function POST(req: NextRequest) {
   // --- forward to Groq Whisper ---
   try {
     const groqForm = new FormData();
-    groqForm.append("file", audio, "audio.webm");
+    // Preserve the client's filename (it encodes the real container — Safari
+    // records mp4, not webm); only fall back to a webm name when absent.
+    const uploadName =
+      audio instanceof File && /^audio\.(webm|m4a|ogg|mp3)$/.test(audio.name)
+        ? audio.name
+        : "audio.webm";
+    groqForm.append("file", audio, uploadName);
     groqForm.append("model", GROQ_MODEL);
     groqForm.append("response_format", "verbose_json");
 

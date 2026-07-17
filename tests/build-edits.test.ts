@@ -46,6 +46,23 @@ describe("applyOneHunk", () => {
   it("returns null when SEARCH is not found", () => {
     expect(applyOneHunk("a\nb", "zzz", "Z")).toBeNull();
   });
+
+  it("refuses an AMBIGUOUS exact match (multiple occurrences) instead of editing the first", () => {
+    expect(applyOneHunk("item()\nother()\nitem()", "item()", "changed()")).toBeNull();
+  });
+
+  it("refuses an ambiguous loose (whitespace-tolerant) match", () => {
+    expect(applyOneHunk("a  \nb\na  \nc", "a", "A")).toBeNull();
+  });
+
+  it("still applies when the match is unique", () => {
+    expect(applyOneHunk("item()\nother()", "item()", "changed()")).toBe("changed()\nother()");
+  });
+
+  it("matches multi-line LF search text against CRLF file content", () => {
+    // Exact match fails (\r\n vs \n) — the loose matcher must still land it.
+    expect(applyOneHunk("a;\r\nb;\r\nc;", "a;\nb;", "A;\nB;")).toBe("A;\nB;\nc;");
+  });
 });
 
 describe("applyEdits", () => {

@@ -56,6 +56,6 @@ describe("forge-code-config — effort profile", () => {
       expect(p.buildTokenBudget).toBeGreaterThan(0);
     }
     expect(forgeCodeEffortProfile("low").planning).toBe(true);
-    expect(forgeCodeEffortProfile("low").reviewPass).toBe(true);
+    expect(forgeCodeEffortProfile("low").strictReview).toBe(true);
   });
 });

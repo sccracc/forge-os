@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireUser, isResponse, readJson, jsonError } from "@/lib/supabase/route-helpers";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { rowToFile, filePatchToUpdate } from "@/lib/supabase/mappers";
+import { checkWritePath } from "@/lib/code/path-safety";
 import type { FileDoc } from "@/lib/data/types";
 
 export const runtime = "nodejs";
@@ -26,7 +27,13 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   const user = await requireUser(req);
   if (isResponse(user)) return user;
   const { id } = await ctx.params;
-  const update = filePatchToUpdate(await readJson<Partial<FileDoc>>(req));
+  const patch = await readJson<Partial<FileDoc>>(req);
+  if (typeof patch.path === "string") {
+    const check = checkWritePath(patch.path);
+    if (!check.ok) return jsonError(`invalid path: ${check.reason}`, 400);
+    patch.path = check.path;
+  }
+  const update = filePatchToUpdate(patch);
   if (Object.keys(update).length) {
     const { error } = await supabaseAdmin
       .from("files")

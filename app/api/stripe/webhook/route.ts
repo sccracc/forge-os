@@ -92,8 +92,10 @@ export async function POST(req: NextRequest) {
       return new Response("ok", { status: 200 });
     }
 
-    // Unhandled event type.
-    return new Response("unhandled event", { status: 400 });
+    // Unhandled event type — acknowledge with 200. Returning an error here
+    // makes Stripe count routine, uninteresting events as delivery failures
+    // and eventually auto-disable the endpoint, silently breaking plan sync.
+    return new Response("ignored", { status: 200 });
   } catch (err) {
     console.error("[stripe/webhook] handler error", err);
     return new Response("handler error", { status: 500 });

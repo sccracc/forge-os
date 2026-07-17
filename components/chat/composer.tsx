@@ -436,8 +436,18 @@ export function Composer({
         toast.error("Transcription failed. Please try again.");
         return;
       }
+      // Name the upload after the ACTUAL container the browser produced —
+      // Safari records audio/mp4, not webm, and a mismatched filename can
+      // fail the transcriber's decode.
+      const ext = type.includes("mp4")
+        ? "m4a"
+        : type.includes("ogg")
+          ? "ogg"
+          : type.includes("mpeg")
+            ? "mp3"
+            : "webm";
       const form = new FormData();
-      form.append("audio", blob, "audio.webm");
+      form.append("audio", blob, `audio.${ext}`);
       const res = await fetch("/api/voice/transcribe", {
         method: "POST",
         headers: { authorization: `Bearer ${token}` },
@@ -483,7 +493,15 @@ export function Composer({
     }
     let recorder: MediaRecorder;
     try {
-      recorder = new MediaRecorder(stream);
+      // Pick an explicitly supported container so the blob's type is known
+      // (Chrome/Firefox: webm+opus; Safari: mp4) instead of relying on the
+      // browser default and mislabeling the upload.
+      const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"];
+      const mimeType =
+        typeof MediaRecorder.isTypeSupported === "function"
+          ? candidates.find((t) => MediaRecorder.isTypeSupported(t))
+          : undefined;
+      recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
     } catch {
       stream.getTracks().forEach((t) => t.stop());
       toast.error("Voice recording isn't supported in this browser.");

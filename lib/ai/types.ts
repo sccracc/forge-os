@@ -25,23 +25,31 @@ export type WireMessage = z.infer<typeof wireMessageSchema>;
 export const chatModeSchema = z.enum(["chat", "code-build", "code-discuss", "code-plan", "code-verify"]);
 export type ChatModeWire = z.infer<typeof chatModeSchema>;
 
+// Server-side payload ceilings. The composer enforces friendlier limits
+// client-side; these are the hard caps a direct API call cannot bypass.
+// 10MB of image data ≈ 14M base64 chars; page images are capped to match the
+// client's 10-page rasterization limit so one "document" can't smuggle an
+// unbounded number of vision calls.
+const MAX_IMAGE_BASE64_CHARS = 15_000_000;
+const MAX_DOCUMENT_TEXT_CHARS = 600_000;
+
 export const attachedImageSchema = z.object({
-  base64: z.string().min(1),
+  base64: z.string().min(1).max(MAX_IMAGE_BASE64_CHARS),
   mimeType: z.enum(IMAGE_MIME_TYPES),
 });
 export type AttachedImageWire = z.infer<typeof attachedImageSchema>;
 
 /** A PDF parsed to text client-side (free, ungated). */
 export const attachedDocumentSchema = z.object({
-  name: z.string(),
-  text: z.string().min(1),
+  name: z.string().max(300),
+  text: z.string().min(1).max(MAX_DOCUMENT_TEXT_CHARS),
 });
 export type AttachedDocumentWire = z.infer<typeof attachedDocumentSchema>;
 
 /** A scanned PDF (no text layer) rendered to page images for AI analysis. */
 export const scannedPdfSchema = z.object({
-  name: z.string(),
-  pages: z.array(attachedImageSchema).min(1),
+  name: z.string().max(300),
+  pages: z.array(attachedImageSchema).min(1).max(10),
 });
 export type ScannedPdfWire = z.infer<typeof scannedPdfSchema>;
 
@@ -59,11 +67,11 @@ export const chatRequestSchema = z.object({
   /** Whether the web_search tool may be offered this turn (toggle, default on). */
   webSearch: z.boolean().optional(),
   /** Optional images to analyze server-side before sending text-only context. */
-  attachedImages: z.array(attachedImageSchema).optional(),
+  attachedImages: z.array(attachedImageSchema).max(10).optional(),
   /** PDFs parsed to text in the browser (free, ungated context). */
-  documents: z.array(attachedDocumentSchema).optional(),
+  documents: z.array(attachedDocumentSchema).max(10).optional(),
   /** Scanned PDFs rendered to page images for gated AI analysis. */
-  scannedPdfs: z.array(scannedPdfSchema).optional(),
+  scannedPdfs: z.array(scannedPdfSchema).max(5).optional(),
   connectorIds: z.array(z.string()).optional(),
   agentId: z.string().optional(),
   skillSlugs: z.array(z.string()).optional(),

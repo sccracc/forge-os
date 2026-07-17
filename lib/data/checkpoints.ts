@@ -64,10 +64,15 @@ export async function deleteCheckpoint(uid: string, projectId: string, id: strin
 }
 
 /** Restores the project to a checkpoint: rewrites snapshot files and removes
- *  any files that didn't exist at that point. */
+ *  any files that didn't exist at that point. The CURRENT state is snapshotted
+ *  first ("Before restore"), so a mis-click restore is itself reversible. */
 export async function restoreCheckpoint(uid: string, projectId: string, id: string): Promise<void> {
   const cp = await api.get<CheckpointDoc | null>(`/api/data/checkpoints/${id}`);
   if (!cp) throw new Error("Checkpoint not found");
+  const preRestore = await getProjectFilesOnce(uid, projectId).catch(() => []);
+  if (preRestore.length) {
+    await createCheckpoint(uid, projectId, "Before restore", "auto", preRestore).catch(() => null);
+  }
   const keep = new Set(cp.files.map((f) => f.path));
   if (cp.files.length) {
     await writeFilesByPath(uid, projectId, cp.files.map((f) => ({ path: f.path, content: f.content })));

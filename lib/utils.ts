@@ -6,8 +6,13 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** Stable, collision-resistant id for client-side ephemeral entities. */
+/** Stable, collision-resistant id for client-side ephemeral entities. Uses a
+ *  CSPRNG — some of these ids (e.g. published-page ids) act as capability
+ *  tokens in shareable URLs, so they must not be guessable. */
 export function uid(prefix = "id"): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return `${prefix}_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
+  }
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
 }
 

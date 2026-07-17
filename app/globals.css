@@ -23,6 +23,7 @@
   --bg-elev: #f3ece2;
   --bg-elev2: #ece2d3;
   --surface: #fffdf9;
+  --surface-2: #f6f0e6;
   --menu: #fffdf9;
   --border: #e6dccd;
   --border-bright: #d8ccb8;
@@ -65,6 +66,7 @@
   --bg-elev: #16130f;
   --bg-elev2: #1f1a14;
   --surface: #1a1611;
+  --surface-2: #221d16;
   --menu: #1c1813;
   --border: #2a231b;
   --border-bright: #3d3325;
@@ -2079,7 +2081,10 @@ h4 {
   transform: translateX(3px);
   box-shadow: 0 4px 16px var(--amber-glow);
 }
-.artifact-icon {
+/* Scoped under .artifact-card: `.artifact-icon` / `.artifact-meta` are ALSO
+   used by the inline artifact block (defined earlier) with different specs —
+   unscoped, these later rules silently clobbered that component's styling. */
+.artifact-card .artifact-icon {
   width: 40px;
   height: 40px;
   border-radius: 9px;
@@ -2090,18 +2095,18 @@ h4 {
   color: var(--amber);
   flex-shrink: 0;
 }
-.artifact-icon svg {
+.artifact-card .artifact-icon svg {
   width: 20px;
   height: 20px;
 }
-.artifact-meta {
+.artifact-card .artifact-meta {
   min-width: 0;
 }
-.artifact-meta b {
+.artifact-card .artifact-meta b {
   font-size: 14px;
   display: block;
 }
-.artifact-meta small {
+.artifact-card .artifact-meta small {
   font-size: 12px;
   color: var(--text-faint);
 }
@@ -3493,6 +3498,12 @@ h4 {
   gap: 11px;
   padding: 15px 18px;
   border-bottom: 1px solid var(--border);
+}
+/* The input removes the native outline, so the wrap must compensate with a
+   visible focus indicator (keyboard users need to see where focus is). */
+.cmdk-input-wrap:focus-within {
+  border-bottom-color: var(--amber);
+  box-shadow: inset 0 -1px 0 var(--amber);
 }
 .cmdk-input-wrap svg {
   width: 18px;

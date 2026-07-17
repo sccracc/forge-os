@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireUser, isResponse, readJson, jsonError } from "@/lib/supabase/route-helpers";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { agentPatchToUpdate } from "@/lib/supabase/mappers";
+import { validateAgentInput } from "@/lib/data/validate";
 import type { AgentDoc } from "@/lib/data/types";
 
 export const runtime = "nodejs";
@@ -12,7 +13,10 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   const user = await requireUser(req);
   if (isResponse(user)) return user;
   const { id } = await ctx.params;
-  const update = agentPatchToUpdate(await readJson<Partial<AgentDoc>>(req));
+  const patch = await readJson<Partial<AgentDoc>>(req);
+  const invalid = validateAgentInput(patch);
+  if (invalid) return jsonError(invalid, 400);
+  const update = agentPatchToUpdate(patch);
   if (Object.keys(update).length) {
     const { error } = await supabaseAdmin
       .from("agents")

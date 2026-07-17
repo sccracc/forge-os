@@ -19,7 +19,9 @@ export interface FileDiff {
   patch: string;
 }
 
-const splitLines = (t: string): string[] => (t === "" ? [] : t.replace(/\n$/, "").split("\n"));
+// CRLF-normalized so mixed line endings don't diff as a full-file change.
+const splitLines = (t: string): string[] =>
+  t === "" ? [] : t.replace(/\r\n/g, "\n").replace(/\n$/, "").split("\n");
 
 /** Longest-common-subsequence backtrack → minimal add/remove edit script. */
 function diffLines(a: string[], b: string[]): Array<{ tag: " " | "-" | "+"; line: string }> {

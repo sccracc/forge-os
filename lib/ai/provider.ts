@@ -96,8 +96,9 @@ export function toProviderMessages(systemPrompt: string, messages: WireMessage[]
   return out;
 }
 
-// Forge's 5 effort levels → DeepSeek V4 reasoning_effort (low/medium/high/max).
-// This is what makes effort scale how hard the model thinks in thinking mode.
+// Forge's 5 effort levels → the provider's reasoning_effort buckets
+// (low/medium/high/max). This is what makes effort scale how hard the model
+// thinks in thinking mode.
 const REASONING_EFFORT: Record<EffortId, "low" | "medium" | "high" | "max"> = {
   low: "low",
   medium: "medium",

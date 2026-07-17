@@ -49,7 +49,10 @@ export default function PublishedPage() {
           Published with Forge OS
         </span>
       </div>
-      <div style={{ flex: 1, minHeight: 0, background: "#fff" }}>
+      {/* Container follows the app theme (loading/missing states); the iframe
+          itself stays white so published pages that assume a light default
+          body remain readable regardless of the viewer's theme. */}
+      <div style={{ flex: 1, minHeight: 0, background: "var(--bg)" }}>
         {state === "loading" && (
           <div style={{ display: "grid", placeItems: "center", height: "100%", color: "var(--text-faint)" }}>
             Loading…
@@ -65,7 +68,7 @@ export default function PublishedPage() {
             title={name}
             srcDoc={injectStorageShim(html)}
             sandbox="allow-scripts allow-modals allow-forms allow-popups allow-pointer-lock"
-            style={{ width: "100%", height: "100%", border: "none" }}
+            style={{ width: "100%", height: "100%", border: "none", background: "#fff" }}
           />
         )}
       </div>

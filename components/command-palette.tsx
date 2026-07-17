@@ -170,17 +170,23 @@ export function CommandPalette() {
         keywords: "agents persona custom",
         run: go("/agents"),
       },
-      {
-        id: "inspect",
-        label: "Inspect active instructions",
-        group: "Navigation",
-        icon: <ScrollText />,
-        keywords: "instruction inspector prompt stack debug context",
-        run: () => {
-          close();
-          setInstructionInspectorOpen(true);
-        },
-      },
+      // Debug-only: the inspector exposes the full internal prompt stack, so it
+      // is hidden unless the deployment explicitly enables it.
+      ...(process.env.NEXT_PUBLIC_FORGE_INSPECTOR === "1"
+        ? [
+            {
+              id: "inspect",
+              label: "Inspect active instructions",
+              group: "Navigation",
+              icon: <ScrollText />,
+              keywords: "instruction inspector prompt stack debug context",
+              run: () => {
+                close();
+                setInstructionInspectorOpen(true);
+              },
+            },
+          ]
+        : []),
       {
         id: "settings",
         label: "Open settings",

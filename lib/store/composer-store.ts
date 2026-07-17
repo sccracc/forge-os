@@ -74,6 +74,14 @@ export const useComposerStore = create<ComposerState>((set) => ({
       thinking: d.thinking,
       toolsEnabled: d.toolsEnabled,
     }),
+  // Also resets per-conversation context (active skills/agent) — without this,
+  // a skill or agent activated in one chat silently leaks into the next one.
   syncFromConversation: (c) =>
-    set({ model: c.model, effort: c.effort, thinking: c.thinking }),
+    set({
+      model: c.model,
+      effort: c.effort,
+      thinking: c.thinking,
+      activeSkillSlugs: [],
+      activeAgentId: null,
+    }),
 }));

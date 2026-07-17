@@ -40,7 +40,8 @@ export function isForgeCodeMode(mode: string | undefined | null): mode is ForgeC
  * Per-effort tuning for the coding agent. Effort scales DEPTH, not output size:
  *  - planning:        run the dedicated planning pass before executing?
  *  - planTimeoutMs:   hard ceiling on the (bounded, best-effort) planning pass.
- *  - reviewPass:      run the automatic self-review pass after executing?
+ *  - strictReview:    run the strict Verifier → Fixer self-correction loop
+ *                     after executing (the request-satisfaction gate)?
  *  - selfCorrectIterations: max Verifier → Fixer → re-verify cycles. Each cycle
  *                     is several model calls, so this is the single biggest cost
  *                     driver — kept deliberately small (2–4) and backed by a
@@ -66,7 +67,7 @@ export function isForgeCodeMode(mode: string | undefined | null): mode is ForgeC
 export interface ForgeCodeEffortProfile {
   planning: boolean;
   planTimeoutMs: number;
-  reviewPass: boolean;
+  strictReview: boolean;
   selfCorrectIterations: number;
   buildTokenBudget: number;
   verifyHeals: number;
@@ -83,7 +84,7 @@ const PROFILES: Record<EffortId, ForgeCodeEffortProfile> = {
   low: {
     planning: true,
     planTimeoutMs: 15_000,
-    reviewPass: true,
+    strictReview: true,
     selfCorrectIterations: 2,
     buildTokenBudget: 60_000,
     verifyHeals: 1,
@@ -95,7 +96,7 @@ const PROFILES: Record<EffortId, ForgeCodeEffortProfile> = {
   medium: {
     planning: true,
     planTimeoutMs: 20_000,
-    reviewPass: true,
+    strictReview: true,
     selfCorrectIterations: 2,
     buildTokenBudget: 90_000,
     verifyHeals: 2,
@@ -107,7 +108,7 @@ const PROFILES: Record<EffortId, ForgeCodeEffortProfile> = {
   high: {
     planning: true,
     planTimeoutMs: 25_000,
-    reviewPass: true,
+    strictReview: true,
     selfCorrectIterations: 3,
     buildTokenBudget: 140_000,
     verifyHeals: 2,
@@ -119,7 +120,7 @@ const PROFILES: Record<EffortId, ForgeCodeEffortProfile> = {
   xhigh: {
     planning: true,
     planTimeoutMs: 30_000,
-    reviewPass: true,
+    strictReview: true,
     selfCorrectIterations: 3,
     buildTokenBudget: 180_000,
     verifyHeals: 2,
@@ -131,7 +132,7 @@ const PROFILES: Record<EffortId, ForgeCodeEffortProfile> = {
   max: {
     planning: true,
     planTimeoutMs: 35_000,
-    reviewPass: true,
+    strictReview: true,
     selfCorrectIterations: 4,
     buildTokenBudget: 250_000,
     verifyHeals: 3,

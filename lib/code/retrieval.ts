@@ -29,6 +29,13 @@ export interface RetrievalOptions {
   maxFullFiles: number;
   /** How far to walk the import/reference graph from request-mentioned files. */
   neighborDepth: number;
+  /**
+   * Paths that MUST be inlined in full, budget notwithstanding (capped at 12).
+   * Used for files the approved plan says will be edited: handing the model a
+   * signature instead of the real contents is exactly what produces mismatched
+   * SEARCH hunks and hallucinated edits.
+   */
+  mustInclude?: string[];
 }
 
 export interface RankedFile {
@@ -291,7 +298,22 @@ export function buildRetrievalContext(
   const fullBlocks: string[] = [];
   let budget = opts.budgetBytes;
 
+  const mustInclude = new Set(
+    (opts.mustInclude ?? []).filter((p) => byPath.has(p)).slice(0, 12)
+  );
+
+  // Must-include files first (typically the plan's edit targets) — exempt from
+  // the budget and file-count caps so the model always edits against reality.
+  for (const path of mustInclude) {
+    const f = byPath.get(path)!;
+    const block = `\n### ${f.path}\n\`\`\`\n${f.content}\n\`\`\``;
+    budget -= byteLength(block);
+    includedFull.push(f.path);
+    fullBlocks.push(block);
+  }
+
   for (const r of ranked) {
+    if (mustInclude.has(r.path)) continue;
     const f = byPath.get(r.path);
     if (!f || !f.content) continue;
     const block = `\n### ${f.path}\n\`\`\`\n${f.content}\n\`\`\``;

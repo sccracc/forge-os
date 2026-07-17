@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireUser, isResponse, readJson, jsonError } from "@/lib/supabase/route-helpers";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { skillPatchToUpdate } from "@/lib/supabase/mappers";
+import { validateSkillInput } from "@/lib/data/validate";
 import type { Skill } from "@/lib/data/types";
 
 export const runtime = "nodejs";
@@ -12,7 +13,10 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   const user = await requireUser(req);
   if (isResponse(user)) return user;
   const { id } = await ctx.params;
-  const update = skillPatchToUpdate(await readJson<Partial<Skill>>(req));
+  const patch = await readJson<Partial<Skill>>(req);
+  const invalid = validateSkillInput(patch);
+  if (invalid) return jsonError(invalid, 400);
+  const update = skillPatchToUpdate(patch);
   if (Object.keys(update).length) {
     const { error } = await supabaseAdmin
       .from("skills")

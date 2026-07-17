@@ -8,25 +8,12 @@
 // toggle (passed as a request param), so the model is chosen purely by the
 // Forge model id — never by the thinking flag.
 import "server-only";
-import { FORGE_MODELS_PUBLIC, type ForgeModelId } from "./models.public";
+import type { ForgeModelId } from "./models.public";
 
 const PROVIDER_MODEL: Record<ForgeModelId, string> = {
   "spark-2.5": "deepseek-v4-flash",
   "magnum-2.8": "deepseek-v4-pro",
 };
-
-export const FORGE_MODELS = {
-  "spark-2.5": {
-    label: FORGE_MODELS_PUBLIC["spark-2.5"].label,
-    blurb: FORGE_MODELS_PUBLIC["spark-2.5"].blurb,
-    provider: PROVIDER_MODEL["spark-2.5"],
-  },
-  "magnum-2.8": {
-    label: FORGE_MODELS_PUBLIC["magnum-2.8"].label,
-    blurb: FORGE_MODELS_PUBLIC["magnum-2.8"].blurb,
-    provider: PROVIDER_MODEL["magnum-2.8"],
-  },
-} as const;
 
 export function resolveProviderModel(id: ForgeModelId): string {
   return PROVIDER_MODEL[id];

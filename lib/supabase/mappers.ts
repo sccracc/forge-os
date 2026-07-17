@@ -537,7 +537,9 @@ export function profilePatchToRows(p: Partial<UserProfile>): {
   const users: Row = {};
   const settings: Row = {};
   if ("displayName" in p) users.name = p.displayName;
-  if ("email" in p) users.email = p.email;
+  // `email` is deliberately NOT patchable here: it is provisioned from the
+  // verified Firebase token via /api/auth/sync-user only. Letting a client
+  // PATCH it would allow arbitrary/colliding emails in the users table.
   if ("photoURL" in p) users.avatar_url = p.photoURL;
 
   if ("defaultModel" in p) settings.default_model = p.defaultModel;

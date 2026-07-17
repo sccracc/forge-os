@@ -49,16 +49,35 @@ export function parseEditHunks(body: string, lenient = false): EditHunk[] {
   return hunks;
 }
 
-const trimEnd = (s: string) => s.replace(/[ \t]+$/g, "");
+// Tolerates trailing spaces/tabs AND a trailing \r, so CRLF files (e.g. code
+// imported from Windows) still match the model's \n-only SEARCH text.
+const trimEnd = (s: string) => s.replace(/[ \t\r]+$/g, "");
 
-/** Apply one hunk; returns the new content, or null if SEARCH wasn't found. */
+function countOccurrences(haystack: string, needle: string): number {
+  let count = 0;
+  let idx = 0;
+  while ((idx = haystack.indexOf(needle, idx)) !== -1) {
+    count++;
+    idx += needle.length || 1;
+    if (count > 1) break; // only "0", "1", or "many" matters
+  }
+  return count;
+}
+
+/** Apply one hunk; returns the new content, or null if SEARCH wasn't found —
+ *  or matched MORE THAN ONCE. An ambiguous SEARCH must fail rather than
+ *  silently edit the first (possibly wrong) location; the recovery pass then
+ *  asks the model for a more specific hunk. */
 export function applyOneHunk(content: string, search: string, replace: string): string | null {
   if (search === "") return content === "" ? replace : null;
   // Exact match first.
-  if (content.includes(search)) return content.replace(search, replace);
-  // Loose match: tolerate trailing-whitespace differences line by line.
+  const exact = countOccurrences(content, search);
+  if (exact === 1) return content.replace(search, replace);
+  if (exact > 1) return null; // ambiguous — refuse to guess
+  // Loose match: tolerate trailing-whitespace/CR differences line by line.
   const cLines = content.split("\n");
   const sLines = search.split("\n").map(trimEnd);
+  let matchAt = -1;
   for (let i = 0; i + sLines.length <= cLines.length; i++) {
     let ok = true;
     for (let j = 0; j < sLines.length; j++) {
@@ -68,8 +87,16 @@ export function applyOneHunk(content: string, search: string, replace: string): 
       }
     }
     if (ok) {
-      return [...cLines.slice(0, i), ...replace.split("\n"), ...cLines.slice(i + sLines.length)].join("\n");
+      if (matchAt !== -1) return null; // second loose match — ambiguous
+      matchAt = i;
     }
+  }
+  if (matchAt !== -1) {
+    return [
+      ...cLines.slice(0, matchAt),
+      ...replace.split("\n"),
+      ...cLines.slice(matchAt + sLines.length),
+    ].join("\n");
   }
   return null;
 }

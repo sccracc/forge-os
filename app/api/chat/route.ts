@@ -32,6 +32,11 @@ import {
   executeGenerateImage,
   executeWebSearch,
 } from "@/lib/ai/tools";
+import {
+  CODE_PROJECT_TOOLS,
+  executeReadProjectFiles,
+  executeSearchProject,
+} from "@/lib/ai/code-tools";
 import { analyzeImages, type VisionImage } from "@/lib/vision/gemini";
 import { siliconFlowApiKey } from "@/lib/images/siliconflow";
 import { imageModelLabelForPlan } from "@/lib/images/public";
@@ -174,6 +179,10 @@ export async function POST(req: NextRequest) {
   const imageModelLabel = imageModelLabelForPlan(plan);
   const webSearchAvailable = webSearch !== false && searchProviderConfigured && searchLimit > 0;
   const imageGenAvailable = imageProviderConfigured && imageLimit > 0;
+  // Forge Code project tools: every code-mode call scoped to a real project can
+  // read exact file contents / search the project mid-generation instead of
+  // guessing. Reads are uid+project scoped server-side and consume no quota.
+  const codeToolsAvailable = isForgeCodeMode(mode) && Boolean(projectId);
   const webSearchStatus =
     searchLimit === 0
       ? `plan locked - ${getUpgradeMessage(plan, "Web search")}`
@@ -261,7 +270,7 @@ export async function POST(req: NextRequest) {
         visionCount = images.length;
       } catch (err) {
         return jsonError(
-          err instanceof Error ? err.message : "Gemini could not analyze the attached image.",
+          err instanceof Error ? err.message : "Forge couldn't analyze the attached image.",
           500
         );
       }
@@ -325,6 +334,7 @@ export async function POST(req: NextRequest) {
     toolsEnabled,
     webSearchAvailable,
     imageGenAvailable,
+    codeToolsAvailable,
     skills,
     skillCatalog,
     agentInstructions,
@@ -361,6 +371,7 @@ export async function POST(req: NextRequest) {
   const tools = [
     ...(webSearchAvailable ? [WEB_SEARCH_TOOL] : []),
     ...(imageGenAvailable ? [GENERATE_IMAGE_TOOL] : []),
+    ...(codeToolsAvailable ? CODE_PROJECT_TOOLS : []),
   ];
   let searchCount = 0;
   let imageCount = 0;
@@ -380,6 +391,16 @@ export async function POST(req: NextRequest) {
       const r = await executeWebSearch(call.args as { query?: string; reason?: string });
       searchCount += 1;
       return r;
+    }
+    if (codeToolsAvailable && call.name === "read_project_files" && projectId) {
+      return executeReadProjectFiles(uid, projectId, call.args as { paths?: unknown });
+    }
+    if (codeToolsAvailable && call.name === "search_project" && projectId) {
+      return executeSearchProject(
+        uid,
+        projectId,
+        call.args as { pattern?: unknown; regex?: unknown }
+      );
     }
     if (call.name === "generate_image") {
       const limit = getFeatureLimit(plan, "images");
@@ -430,6 +451,8 @@ export async function POST(req: NextRequest) {
           } else if (ev.type === "content") {
             controller.enqueue(encoder.encode(encodeEvent({ t: "content", d: ev.delta })));
           } else if (ev.type === "tool_start") {
+            // Project-tool reads are internal agent plumbing — no UI chip.
+            if (ev.name === "read_project_files" || ev.name === "search_project") continue;
             if (ev.name === "generate_image") {
               const loadingText =
                 typeof ev.args.loading_text === "string"
@@ -446,6 +469,7 @@ export async function POST(req: NextRequest) {
               encoder.encode(encodeEvent({ t: "status", id: ev.id, d: q, done: false }))
             );
           } else if (ev.type === "tool_end") {
+            if (ev.name === "read_project_files" || ev.name === "search_project") continue;
             if (ev.name === "generate_image") {
               controller.enqueue(
                 encoder.encode(

@@ -36,3 +36,18 @@ export async function readJson<T>(req: Request): Promise<T> {
 export function dbError(error: { message: string } | null): Response | null {
   return error ? jsonError(error.message, 500) : null;
 }
+
+/** Parent-ownership check: true only when EVERY referenced project id belongs
+ *  to `uid`. Used before attaching rows (files, checkpoints) to a project. */
+export async function projectsOwnedBy(uid: string, projectIds: (string | null | undefined)[]): Promise<boolean> {
+  const { supabaseAdmin } = await import("./server");
+  const distinct = [...new Set(projectIds.filter((p): p is string => Boolean(p)))];
+  if (distinct.length === 0) return true;
+  const { data, error } = await supabaseAdmin
+    .from("projects")
+    .select("id")
+    .eq("user_id", uid)
+    .in("id", distinct);
+  if (error) return false;
+  return (data ?? []).length === distinct.length;
+}

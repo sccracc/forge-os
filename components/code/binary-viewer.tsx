@@ -18,7 +18,11 @@ export function BinaryViewer({ file }: { file: FileDoc }) {
       revoke = u;
       setUrl(u);
     } else if (user && (file.storagePath || file.chunked)) {
-      FileStore.getUrl(user.uid, file.id, { storagePath: file.storagePath, chunked: file.chunked }, file.mime).then(
+      // Force the blob MIME for PDFs: a file whose stored mime claims
+      // text/html would otherwise materialize as a same-origin HTML blob and
+      // execute scripts inside this (unsandboxed, plugin-rendered) frame.
+      const safeMime = file.category === "pdf" ? "application/pdf" : file.mime;
+      FileStore.getUrl(user.uid, file.id, { storagePath: file.storagePath, chunked: file.chunked }, safeMime).then(
         (u) => {
           if (u) {
             setUrl(u);

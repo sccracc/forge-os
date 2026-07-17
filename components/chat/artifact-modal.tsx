@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { X, Copy, Check, Download, ExternalLink, Eye, Code2, FileCode2 } from "lucide-react";
 import { highlightCode } from "@/lib/shiki";
 import { wrapPreviewDoc } from "@/lib/code/snippet";
+import { openSandboxedTab } from "@/lib/code/open-sandboxed";
 
 export function ArtifactModal({
   code,
@@ -58,14 +59,7 @@ export function ArtifactModal({
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  const openTab = () => {
-    const w = window.open("", "_blank");
-    if (w) {
-      w.document.open();
-      w.document.write(wrapPreviewDoc(code));
-      w.document.close();
-    }
-  };
+  const openTab = () => openSandboxedTab(wrapPreviewDoc(code), filename);
 
   if (!mounted) return null;
 

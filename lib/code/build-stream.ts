@@ -116,7 +116,10 @@ function freqCommon(a: string[], b: string[]): number {
   return common;
 }
 
-const splitLines = (t: string): string[] => (t === "" ? [] : t.replace(/\n$/, "").split("\n"));
+// CRLF-normalized: an imported CRLF file diffed against the model's LF output
+// must not register every line as changed.
+const splitLines = (t: string): string[] =>
+  t === "" ? [] : t.replace(/\r\n/g, "\n").replace(/\n$/, "").split("\n");
 
 const nonEmptyLineCount = (t: string): number => {
   if (!t) return 0;

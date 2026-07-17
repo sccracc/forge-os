@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw, ExternalLink, Download, Home } from "lucide-react";
 import { assembleWeb, bundleApp, effectivePreviewMode, resolveNavTarget } from "@/lib/code/preview";
+import { openSandboxedTab } from "@/lib/code/open-sandboxed";
 import type { FileDoc, ProjectDoc } from "@/lib/data/types";
 
 export function PreviewPane({
@@ -120,14 +121,7 @@ export function PreviewPane({
           className="icon-btn"
           title="Open in new tab"
           aria-label="Open in new tab"
-          onClick={() => {
-            const w = window.open("", "_blank");
-            if (w) {
-              w.document.open();
-              w.document.write(srcDoc);
-              w.document.close();
-            }
-          }}
+          onClick={() => openSandboxedTab(srcDoc, project?.name ?? "Preview")}
         >
           <ExternalLink size={15} />
         </button>

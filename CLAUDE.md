@@ -24,7 +24,10 @@ account, one file system, one design language:
 ## Stack
 
 Next.js 16 (App Router, RSC) · TypeScript strict · Tailwind v4 (CSS-first) ·
-Firebase (Auth + Firestore + Storage) + Admin SDK · AI SDK v6 deps present, but
+Firebase (Auth + Storage for binary blobs) + Admin SDK · **Supabase/Postgres is
+the primary data store** (conversations, messages, projects, files, skills,
+agents, checkpoints, usage, billing — all via server-only service-role routes
+under `app/api/data/**`; `supabase/schema.sql`) · AI SDK v6 deps present, but
 the core chat path uses a custom server-only streaming client
 (`lib/ai/provider.ts`) for full control over thinking, continuation, and
 reasoning replay · Framer Motion · Zustand + TanStack Query · Shiki ·
@@ -40,8 +43,12 @@ react-markdown + KaTeX · Vitest.
 - Molten design system lives in `app/globals.css` (tokens for both themes via
   `[data-theme]`, atmosphere, all component classes). Theme is cookie-driven with
   a pre-paint inline script (no flash); default LIGHT.
-- Firestore data model: everything under `users/{uid}/…`. Messages form a tree
-  (`parentId`) so branching needs no migration. See `lib/data/`.
+- Data model: Supabase/Postgres rows scoped by `user_id` on every table; the
+  client never talks to Supabase directly (all access via `requireUser`-gated
+  `/api/data/*` routes with the service-role key). Messages form a tree
+  (`parent_id`) so branching needs no migration. See `lib/data/` +
+  `lib/supabase/`. `firestore.rules` is legacy (Firestore itself is unused);
+  `storage.rules` is still live for Firebase Storage blobs.
 - Client engine: composer settings (`lib/store/composer-store.ts`), streaming
   state that survives navigation (`lib/store/stream-store.ts`), and the
   send/stop/regenerate controller (`hooks/use-chat-send.ts`).

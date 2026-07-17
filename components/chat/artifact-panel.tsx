@@ -5,6 +5,7 @@ import { X, Copy, Check, Download, ExternalLink, Eye, Code2 } from "lucide-react
 import { highlightCode } from "@/lib/shiki";
 import { useArtifactStore } from "@/lib/store/artifact-store";
 import { wrapPreviewDoc, isPreviewable, defaultFilename } from "@/lib/code/snippet";
+import { openSandboxedTab } from "@/lib/code/open-sandboxed";
 
 export function ArtifactPanel() {
   const artifact = useArtifactStore((s) => s.artifact);
@@ -49,14 +50,7 @@ export function ArtifactPanel() {
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  const openTab = () => {
-    const w = window.open("", "_blank");
-    if (w) {
-      w.document.open();
-      w.document.write(wrapPreviewDoc(artifact.code));
-      w.document.close();
-    }
-  };
+  const openTab = () => openSandboxedTab(wrapPreviewDoc(artifact.code), artifact.title);
 
   return (
     <>

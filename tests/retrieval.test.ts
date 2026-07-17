@@ -99,3 +99,36 @@ describe("retrieval — buildRetrievalContext", () => {
     expect(r.context).toContain("<h1>Hello</h1>");
   });
 });
+
+describe("retrieval — mustInclude (plan edit targets)", () => {
+  it("inlines must-include files in full even when they'd never fit the budget", () => {
+    const big = "z".repeat(10_000);
+    const files = [
+      f("index.html", "<h1>Hi</h1>"),
+      f("huge-target.js", big),
+      f("other.js", "console.log(1)"),
+    ];
+    const r = buildRetrievalContext(files, "change the heading", {
+      budgetBytes: 500,
+      maxFullFiles: 1,
+      neighborDepth: 1,
+      mustInclude: ["huge-target.js"],
+    });
+    expect(r.includedFull).toContain("huge-target.js");
+    expect(r.context).toContain(big);
+    expect(r.summarized).not.toContain("huge-target.js");
+  });
+
+  it("ignores must-include paths that don't exist and caps the set at 12", () => {
+    const files = Array.from({ length: 20 }, (_, i) => f(`file${i}.js`, "y".repeat(50)));
+    const r = buildRetrievalContext(files, "anything", {
+      budgetBytes: 100,
+      maxFullFiles: 1,
+      neighborDepth: 1,
+      mustInclude: ["missing.js", ...files.map((x) => x.path)],
+    });
+    expect(r.includedFull).not.toContain("missing.js");
+    expect(r.includedFull.length).toBeLessThanOrEqual(13); // 12 forced + up to 1 budgeted
+    expect(r.includedFull.length + r.summarized.length).toBe(20);
+  });
+});

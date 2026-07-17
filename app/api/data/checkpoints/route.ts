@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireUser, isResponse, readJson, jsonError } from "@/lib/supabase/route-helpers";
+import { requireUser, isResponse, readJson, jsonError, projectsOwnedBy } from "@/lib/supabase/route-helpers";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { rowToCheckpoint, checkpointToInsert } from "@/lib/supabase/mappers";
 import type { CheckpointDoc } from "@/lib/data/types";
@@ -29,6 +29,10 @@ export async function POST(req: NextRequest) {
   const user = await requireUser(req);
   if (isResponse(user)) return user;
   const cp = await readJson<CheckpointDoc>(req);
+  // Parent-ownership check: never attach a checkpoint to another user's project.
+  if (!cp.projectId || !(await projectsOwnedBy(user.uid, [cp.projectId]))) {
+    return jsonError("not found", 404);
+  }
   const { error } = await supabaseAdmin
     .from("checkpoints")
     .insert(checkpointToInsert(cp, user.uid));
@@ -43,7 +47,7 @@ export async function POST(req: NextRequest) {
     .order("at", { ascending: false });
   if (all && all.length > MAX_CHECKPOINTS) {
     const extras = all.slice(MAX_CHECKPOINTS).map((r) => String(r.id));
-    await supabaseAdmin.from("checkpoints").delete().in("id", extras);
+    await supabaseAdmin.from("checkpoints").delete().eq("user_id", user.uid).in("id", extras);
   }
   return Response.json({ id: cp.id });
 }
