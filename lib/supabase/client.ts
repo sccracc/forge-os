@@ -33,9 +33,14 @@ export function getSupabaseBrowser(): SupabaseClient | null {
         flowType: "pkce",
         autoRefreshToken: true,
         persistSession: true,
-        // The /auth/callback page performs the code exchange explicitly, so
-        // automatic URL detection stays off (avoids double-exchange races).
-        detectSessionInUrl: false,
+        // Auto-exchange the ?code on WHATEVER page Supabase returns to. If the
+        // project's redirect allowlist doesn't match /auth/callback, Supabase
+        // falls back to the Site URL (the app root) — with detection on, the
+        // code is exchanged exactly once wherever it lands. The callback page
+        // deliberately does NOT call exchangeCodeForSession itself: a second
+        // exchange of a single-use code is what produces the
+        // token?grant_type=pkce 404 ("flow state not found").
+        detectSessionInUrl: true,
       },
     });
   }

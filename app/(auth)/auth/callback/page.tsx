@@ -1,8 +1,12 @@
 "use client";
 
-// OAuth landing — completes the Google → Supabase PKCE round trip.
-// signInWithOAuth redirects here with ?code=…; we exchange it for a session
-// and head home. Failures land back on /sign-in with a friendly message.
+// OAuth landing — the Google → Supabase PKCE round trip returns here (or to
+// the Site URL root, if this path isn't in the project's redirect allowlist).
+// The Supabase client is created with detectSessionInUrl: true, so IT performs
+// the one-and-only code exchange on load. This page just waits for the session
+// to materialize and routes accordingly. It must NEVER call
+// exchangeCodeForSession itself — a second exchange of the single-use code
+// fails with a token?grant_type=pkce 404 ("flow state not found").
 
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -10,41 +14,79 @@ import { motion } from "framer-motion";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { ForgeMark } from "@/components/icons";
 
+const WAIT_MS = 10_000;
+
 export default function AuthCallbackPage() {
   const router = useRouter();
   const ran = useRef(false);
 
   useEffect(() => {
-    if (ran.current) return; // React strict-mode double-invoke guard
+    if (ran.current) return;
     ran.current = true;
 
-    (async () => {
-      const failTo = (msg: string) =>
-        router.replace(`/sign-in?error=${encodeURIComponent(msg)}`);
+    const failTo = (msg: string) =>
+      router.replace(`/sign-in?error=${encodeURIComponent(msg)}`);
 
-      const sb = getSupabaseBrowser();
-      if (!sb) {
-        failTo("Sign-in isn't configured for this deployment.");
-        return;
+    const sb = getSupabaseBrowser();
+    if (!sb) {
+      failTo("Sign-in isn't configured for this deployment.");
+      return;
+    }
+
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("error")) {
+      const desc = url.searchParams.get("error_description");
+      failTo(desc ? desc : "Sign-in was cancelled.");
+      return;
+    }
+    const hadCode = url.searchParams.has("code");
+
+    let settled = false;
+    let unsub: (() => void) | null = null;
+    const finish = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
+      unsub?.();
+      clearTimeout(timer);
+      if (ok) router.replace("/");
+      else failTo("Couldn't complete sign-in. Please try again.");
+    };
+
+    // The client's auto-detection exchanges the code during initialization;
+    // getSession resolves after that. The auth-event subscription covers the
+    // case where the exchange lands a beat later.
+    const { data: sub } = sb.auth.onAuthStateChange((event, session) => {
+      if (session) finish(true);
+      else if (event === "SIGNED_OUT") {
+        /* ignore — initial state before exchange completes */
       }
-      const url = new URL(window.location.href);
-      if (url.searchParams.get("error")) {
-        const desc = url.searchParams.get("error_description");
-        failTo(desc ? desc : "Sign-in was cancelled.");
-        return;
-      }
-      const code = url.searchParams.get("code");
-      if (!code) {
-        router.replace("/sign-in");
-        return;
-      }
-      const { error } = await sb.auth.exchangeCodeForSession(window.location.href);
-      if (error) {
-        failTo("Couldn't complete sign-in. Please try again.");
-        return;
-      }
-      router.replace("/");
-    })();
+    });
+    unsub = () => sub.subscription.unsubscribe();
+
+    sb.auth
+      .getSession()
+      .then(({ data, error }) => {
+        if (error) console.error("[auth/callback] getSession failed", error);
+        if (data.session) finish(true);
+        else if (!hadCode) {
+          // Nothing to wait for — no code, no error, no session.
+          settled = true;
+          unsub?.();
+          clearTimeout(timer);
+          router.replace("/sign-in");
+        }
+        // else: keep waiting for the auth event or the timeout.
+      })
+      .catch((e) => {
+        console.error("[auth/callback] getSession threw", e);
+      });
+
+    const timer = setTimeout(() => finish(false), WAIT_MS);
+
+    return () => {
+      unsub?.();
+      clearTimeout(timer);
+    };
   }, [router]);
 
   return (
