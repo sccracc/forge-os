@@ -108,8 +108,10 @@ export function AgentEditor({ agent, onClose }: { agent: AgentDoc | "new"; onClo
             />
           </div>
 
-          <div style={{ display: "flex", gap: 12 }}>
-            <div className="field" style={{ flex: 1 }}>
+          {/* flexWrap + minWidth: on narrow phones the fixed Thinking column
+              must not crush the selects — fields wrap instead (mobile audit). */}
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <div className="field" style={{ flex: 1, minWidth: 150 }}>
               <label>Default model</label>
               <select
                 value={model}
@@ -124,7 +126,7 @@ export function AgentEditor({ agent, onClose }: { agent: AgentDoc | "new"; onClo
                 ))}
               </select>
             </div>
-            <div className="field" style={{ flex: 1 }}>
+            <div className="field" style={{ flex: 1, minWidth: 150 }}>
               <label>Default effort</label>
               <select
                 value={effort}

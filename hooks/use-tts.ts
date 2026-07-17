@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getFirebaseAuth } from "@/lib/firebase/client";
+import { getAccessToken } from "@/lib/supabase/client";
 import { toast } from "@/lib/store/toast-store";
 
 export type TtsStatus = "idle" | "loading" | "playing";
@@ -78,7 +78,7 @@ export function useTts(text: string) {
     const controller = new AbortController();
     self.controller = controller;
     try {
-      const token = await getFirebaseAuth()?.currentUser?.getIdToken();
+      const token = await getAccessToken();
       if (!token) throw new Error("no-token");
 
       const res = await fetch("/api/voice/speak", {

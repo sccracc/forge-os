@@ -78,13 +78,13 @@ function friendlyError(err: unknown): string {
 }
 
 export async function POST(req: NextRequest) {
-  // 1. Verify the Firebase ID token (never trust a client uid).
+  // 1. Verify the access token (never trust a client uid).
   let user;
   try {
     user = await verifyRequest(req);
   } catch (err) {
     if (process.env.NODE_ENV !== "production") console.error("[chat auth]", err);
-    return jsonError("Forge auth is misconfigured. Check Firebase Admin credentials.", 500);
+    return jsonError("Forge auth is misconfigured. Check the server auth credentials.", 500);
   }
   if (!user) return jsonError("unauthorized", 401);
   const uid = user.uid;

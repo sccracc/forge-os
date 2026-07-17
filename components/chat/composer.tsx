@@ -11,7 +11,7 @@ import { useAgents } from "@/hooks/use-agents";
 import { FORGE_MODELS_PUBLIC } from "@/lib/ai/models.public";
 import { EFFORT } from "@/lib/ai/effort";
 import { toast } from "@/lib/store/toast-store";
-import { getFirebaseAuth } from "@/lib/firebase/client";
+import { getAccessToken } from "@/lib/supabase/client";
 import { UsageIndicator } from "./usage-indicator";
 import { useUsageStore } from "@/lib/store/usage-store";
 import { tokenStatus } from "@/lib/usage/compute";
@@ -431,7 +431,7 @@ export function Composer({
       return;
     }
     try {
-      const token = await getFirebaseAuth()?.currentUser?.getIdToken();
+      const token = await getAccessToken();
       if (!token) {
         toast.error("Transcription failed. Please try again.");
         return;

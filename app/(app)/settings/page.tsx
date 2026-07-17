@@ -60,6 +60,10 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
         padding: "11px 0",
         borderTop: "1px solid var(--border)",
         gap: 16,
+        // Fixed-width selects wrap below the label on narrow phones instead
+        // of overflowing the card (mobile audit).
+        flexWrap: "wrap",
+        rowGap: 8,
       }}
     >
       <span style={{ fontSize: 14 }}>{label}</span>
@@ -239,7 +243,7 @@ export default function SettingsPage() {
               <Row label="Default model">
                 <select
                   className="field"
-                  style={{ width: 200, padding: "8px 10px", margin: 0 }}
+                  style={{ width: "min(200px, 100%)", padding: "8px 10px", margin: 0 }}
                   value={profile?.defaultModel ?? "magnum-2.8"}
                   onChange={(e) => patch({ defaultModel: e.target.value as ForgeModelId })}
                 >
@@ -253,7 +257,7 @@ export default function SettingsPage() {
               <Row label="Default effort">
                 <select
                   style={{
-                    width: 200,
+                    width: "min(200px, 100%)",
                     padding: "8px 10px",
                     background: "var(--bg-elev)",
                     border: "1px solid var(--border-bright)",
@@ -293,7 +297,7 @@ export default function SettingsPage() {
               <Row label="Autonomy">
                 <select
                   style={{
-                    width: 250,
+                    width: "min(250px, 100%)",
                     padding: "8px 10px",
                     background: "var(--bg-elev)",
                     border: "1px solid var(--border-bright)",

@@ -31,16 +31,12 @@ function Splash() {
 
 function ConfigNotice() {
   const vars = [
-    "NEXT_PUBLIC_FIREBASE_API_KEY",
-    "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN",
-    "NEXT_PUBLIC_FIREBASE_PROJECT_ID",
-    "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET",
-    "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",
-    "NEXT_PUBLIC_FIREBASE_APP_ID",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   ];
   return (
     <div style={{ height: "100dvh", display: "grid", placeItems: "center", padding: 24, position: "relative", zIndex: 1 }}>
-      <div className="modal" style={{ width: 540, animation: "none" }}>
+      <div className="modal" style={{ width: "min(540px, calc(100vw - 32px))", animation: "none" }}>
         <div className="modal-head">
           <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
             <div className="logo-mark" style={{ width: 33, height: 33 }}>
@@ -51,9 +47,9 @@ function ConfigNotice() {
         </div>
         <div className="modal-body">
           <p style={{ color: "var(--text-dim)", lineHeight: 1.6, marginBottom: 16 }}>
-            Forge is built and ready. Add your Firebase web config and server
-            chat credentials as environment variables, then reload. These power
-            sign-in, your workspace, and the assistant.
+            Forge is built and ready. Add your Supabase project credentials and
+            server chat credentials as environment variables, then reload.
+            These power sign-in, your workspace, and the assistant.
           </p>
           <div
             style={{
@@ -74,13 +70,7 @@ function ConfigNotice() {
             ))}
             <div style={{ opacity: 0.5, marginTop: 8 }}># server-only</div>
             <div>
-              FIREBASE_ADMIN_PROJECT_ID=<span style={{ opacity: 0.5 }}>…</span>
-            </div>
-            <div>
-              FIREBASE_ADMIN_CLIENT_EMAIL=<span style={{ opacity: 0.5 }}>…</span>
-            </div>
-            <div>
-              FIREBASE_ADMIN_PRIVATE_KEY=<span style={{ opacity: 0.5 }}>…</span>
+              SUPABASE_SERVICE_ROLE_KEY=<span style={{ opacity: 0.5 }}>…</span>
             </div>
           </div>
         </div>

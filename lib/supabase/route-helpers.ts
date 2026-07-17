@@ -5,7 +5,7 @@ import { supabaseConfigured } from "./server";
 export { jsonError };
 
 /**
- * Verifies the Firebase ID token and that Supabase is configured. Returns the
+ * Verifies the Supabase access token and that Supabase is configured. Returns the
  * authenticated user, or a `Response` to return early. The verified `uid` is the
  * sole source of truth — never trust a client-sent uid.
  *

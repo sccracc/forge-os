@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { X, Code2, Columns2, Eye, FileCode2, Play } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useProject, useProjectFiles } from "@/hooks/use-projects";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { updateContent } from "@/lib/data/files";
 import { touchProject } from "@/lib/data/projects";
 import { detectLang, isTextCategory } from "@/lib/code/languages";
@@ -23,6 +24,7 @@ export function IDE({ projectId }: { projectId: string }) {
   const { user, getIdToken } = useAuth();
   const project = useProject(projectId);
   const { files, loading } = useProjectFiles(projectId);
+  const isMobile = useIsMobile();
 
   const [tabs, setTabs] = useState<string[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -200,6 +202,26 @@ export function IDE({ projectId }: { projectId: string }) {
       setRunnerRunning(false);
     }
   }, [activeFile, getIdToken, runLanguage, runnerStdin, save, user, value]);
+
+  // MOBILE: the full IDE (tree + editor + dock) can't fit a phone and renders
+  // squished — show a clean, full-bleed live preview of the project instead.
+  // `null` = viewport not measured yet; render a bare frame for that one tick
+  // rather than mounting Monaco on a phone.
+  if (isMobile === null) {
+    return <div className="ide" aria-hidden />;
+  }
+  if (isMobile) {
+    return (
+      <div className="ide-mobile">
+        <div className="ide-mobile-preview">
+          <PreviewPane files={files} project={project} />
+        </div>
+        <div className="ide-mobile-note">
+          Live preview — open on a larger screen to edit this project.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="ide">

@@ -1,19 +1,12 @@
 "use client";
 
-// Authenticated fetch to the Forge data API. Attaches the current Firebase ID
-// token (read via the EXISTING exported getFirebaseAuth — no auth code is
-// modified) so server routes can verify it and derive the uid. JSON in/out.
+// Authenticated fetch to the Forge data API. Attaches the current Supabase
+// access token so server routes can verify it and derive the uid. JSON in/out.
 
-import { getFirebaseAuth } from "@/lib/firebase/client";
+import { getAccessToken } from "@/lib/supabase/client";
 
 async function idToken(): Promise<string | null> {
-  const user = getFirebaseAuth()?.currentUser;
-  if (!user) return null;
-  try {
-    return await user.getIdToken();
-  } catch {
-    return null;
-  }
+  return getAccessToken();
 }
 
 export class ApiError extends Error {

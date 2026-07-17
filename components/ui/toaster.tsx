@@ -34,7 +34,6 @@ export function Toaster() {
               <span style={{ flex: 1 }}>{t.message}</span>
               <button
                 className="icon-btn"
-                style={{ width: 24, height: 24 }}
                 onClick={() => dismiss(t.id)}
                 aria-label="Dismiss"
               >

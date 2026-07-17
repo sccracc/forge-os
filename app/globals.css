@@ -57,6 +57,20 @@
   --danger: #e5484d;
   --radius: 14px;
   --radius-sm: 9px;
+  /* ---- Liquid Glass (light) — translucency + blur + specular edges.
+     Same hues as the solid tokens; only opacity/depth change. ---- */
+  --glass-bg: color-mix(in srgb, #fffdf9 58%, transparent);
+  --glass-bg-strong: color-mix(in srgb, #fffdf9 76%, transparent);
+  --glass-bg-soft: color-mix(in srgb, #f3ece2 42%, transparent);
+  --glass-border: color-mix(in srgb, #d8ccb8 62%, transparent);
+  --glass-edge: rgba(255, 255, 255, 0.75);
+  --glass-glow: rgba(255, 255, 255, 0.4);
+  --glass-shadow: 0 8px 32px rgba(42, 33, 24, 0.1), 0 1px 2px rgba(42, 33, 24, 0.05);
+  --glass-shadow-strong: 0 24px 64px rgba(42, 33, 24, 0.16), 0 2px 8px rgba(42, 33, 24, 0.07);
+  --glass-blur: 20px;
+  --glass-blur-strong: 32px;
+  --glass-saturate: 1.6;
+  --scrim: rgba(42, 33, 24, 0.28);
   color-scheme: light;
 }
 
@@ -98,7 +112,57 @@
   --tk-attr: #ffb347;
   --ok: #3fb950;
   --danger: #ff6166;
+  /* ---- Liquid Glass (dark) — deeper translucency, faint specular edge. ---- */
+  --glass-bg: color-mix(in srgb, #1a1611 52%, transparent);
+  --glass-bg-strong: color-mix(in srgb, #16130f 72%, transparent);
+  --glass-bg-soft: color-mix(in srgb, #1f1a14 38%, transparent);
+  --glass-border: color-mix(in srgb, #3d3325 65%, transparent);
+  --glass-edge: rgba(255, 255, 255, 0.1);
+  --glass-glow: rgba(255, 255, 255, 0.05);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.35);
+  --glass-shadow-strong: 0 24px 64px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.45);
+  --glass-blur: 20px;
+  --glass-blur-strong: 32px;
+  --glass-saturate: 1.4;
+  --scrim: rgba(0, 0, 0, 0.5);
   color-scheme: dark;
+}
+
+/* ---------- LIQUID GLASS PRIMITIVES ----------
+   The shared recipes every glassed surface builds on. Three tiers:
+     .glass        — floating chrome (bars, docks, chips, cards)
+     .glass-strong — overlays that sit on content (menus, modals, palette, toasts)
+     .glass-soft   — subtle inset panels (wells, rails)
+   Every tier keeps the EXACT product hues (tokens above) — glass changes
+   opacity, blur, and depth, never color identity. Solid fallback when
+   backdrop-filter is unsupported. */
+.glass,
+.glass-strong,
+.glass-soft {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+.glass-strong {
+  background: var(--glass-bg-strong);
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow-strong);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+}
+.glass-soft {
+  background: var(--glass-bg-soft);
+  box-shadow: inset 0 1px 0 var(--glass-glow);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass,
+  .glass-strong {
+    background: var(--surface);
+  }
+  .glass-soft {
+    background: var(--bg-elev);
+  }
 }
 
 /* ---------- BASE ---------- */
@@ -394,7 +458,7 @@ h4 {
 .ft-dropzone { position: absolute; inset: 8px; border: 2px dashed var(--amber); border-radius: 12px; background: var(--amber-tint); display: grid; place-items: center; color: var(--amber); font-size: 13px; font-weight: 600; z-index: 6; animation: dzPulseIn 0.2s ease; pointer-events: none; }
 @keyframes dzPulseIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
 .ft-uploads { position: absolute; left: 10px; right: 10px; bottom: 10px; display: grid; gap: 6px; z-index: 7; pointer-events: none; }
-.ft-upload { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border-bright); font-size: 12px; position: relative; overflow: hidden; box-shadow: 0 6px 16px var(--shadow); animation: thumbPopIn 0.4s cubic-bezier(0.2, 1.35, 0.3, 1) both; }
+.ft-upload { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 8px; background: var(--glass-bg-soft); border: 1px solid var(--border-bright); font-size: 12px; position: relative; overflow: hidden; box-shadow: 0 6px 16px var(--shadow); animation: thumbPopIn 0.4s cubic-bezier(0.2, 1.35, 0.3, 1) both; }
 .ft-upload .ufill2 { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--amber-tint); animation: ufill2 0.85s ease forwards; }
 .ft-upload .uname2 { position: relative; font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @keyframes ufill2 { to { width: 100%; } }
@@ -415,7 +479,7 @@ h4 {
 [data-tip]:hover::after { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); transition-delay: 0.35s; }
 
 /* #62 · connection status pill */
-.conn-pill { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%) translateY(20px); opacity: 0; z-index: 500; display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 100px; background: var(--code-bg); color: #fff; font-size: 12.5px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3); animation: connPillIn 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) forwards; }
+.conn-pill { position: fixed; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%) translateY(20px); opacity: 0; z-index: 500; display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 100px; background: var(--code-bg); color: #fff; font-size: 12.5px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3); animation: connPillIn 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) forwards; }
 .conn-pill.hide { animation: connPillOut 0.4s ease forwards; }
 .conn-pill .cdot2 { width: 8px; height: 8px; border-radius: 50%; }
 .conn-pill.on .cdot2 { background: #51cf66; box-shadow: 0 0 8px #51cf66; }
@@ -513,7 +577,7 @@ h4 {
   align-items: center;
   gap: 7px;
   padding: 6px 12px;
-  background: var(--bg-elev2);
+  background: var(--glass-bg-soft);
   border: 1px solid var(--border);
   border-radius: 100px;
   font-size: 12.5px;
@@ -567,7 +631,7 @@ h4 {
   max-width: 90%;
   padding: 7px 14px;
   border-radius: 100px;
-  background: var(--bg-elev);
+  background: var(--glass-bg-soft);
   border: 1px solid var(--border);
   color: var(--text-dim);
   font-size: 12.5px;
@@ -595,7 +659,7 @@ h4 {
   padding: 7px 14px;
   border-radius: 100px;
   border: 1px solid var(--border);
-  background: var(--bg-elev2);
+  background: var(--glass-bg-soft);
   font-size: 12.5px;
   color: var(--text-dim);
 }
@@ -681,7 +745,7 @@ h4 {
   padding: 6px 12px;
   border: 1px solid var(--border);
   border-radius: 100px;
-  background: var(--bg-elev2);
+  background: var(--glass-bg-soft);
   color: var(--text-dim);
   font-size: 12.5px;
 }
@@ -699,7 +763,7 @@ h4 {
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--bg-elev);
+  background: var(--glass-bg-soft);
   color: var(--text-dim);
   font-size: 13px;
 }
@@ -855,7 +919,7 @@ h4 {
   gap: 7px;
   max-width: 100%;
   padding: 5px 11px;
-  background: var(--bg-elev2);
+  background: var(--glass-bg-soft);
   border: 1px solid var(--border);
   border-radius: 100px;
   font-size: 12.5px;
@@ -903,7 +967,7 @@ h4 {
   gap: 6px;
   max-width: 220px;
   padding: 3px 10px 3px 7px;
-  background: var(--bg-elev2);
+  background: var(--glass-bg-soft);
   border: 1px solid var(--border);
   border-radius: 100px;
   font-size: 11.5px;
@@ -932,12 +996,15 @@ h4 {
 /* segmented control (mode switcher / build-discuss / code-split-preview) */
 .segmented {
   display: flex;
-  background: var(--bg-elev2);
-  border: 1px solid var(--border);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 10px;
   padding: 3px;
   gap: 2px;
   position: relative;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
 }
 .segmented button {
   flex: 1;
@@ -969,9 +1036,9 @@ h4 {
   position: absolute;
   top: 3px;
   bottom: 3px;
-  background: var(--surface);
+  background: var(--glass-bg-strong);
   border-radius: 7px;
-  box-shadow: 0 1px 4px var(--shadow);
+  box-shadow: inset 0 1px 0 var(--glass-edge), 0 1px 4px var(--shadow);
   z-index: 0;
 }
 
@@ -980,12 +1047,13 @@ h4 {
   width: 38px;
   height: 22px;
   border-radius: 100px;
-  background: var(--bg-elev2);
+  background: var(--glass-bg-soft);
   border: 1px solid var(--border-bright);
   position: relative;
   transition: all 0.2s;
   flex-shrink: 0;
   cursor: pointer;
+  box-shadow: inset 0 1px 0 var(--glass-glow);
 }
 .switch::after {
   content: "";
@@ -1017,8 +1085,11 @@ h4 {
 }
 .sidebar {
   width: 262px;
-  background: linear-gradient(180deg, var(--bg-elev) 0%, var(--bg) 100%);
-  border-right: 1px solid var(--border);
+  background: var(--glass-bg);
+  border-right: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
   display: flex;
   flex-direction: column;
   padding: 16px 12px;
@@ -1061,9 +1132,10 @@ h4 {
   align-items: center;
   gap: 8px;
   padding: 9px 12px;
-  background: var(--surface);
+  background: var(--glass-bg-soft);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
+  box-shadow: inset 0 1px 0 var(--glass-glow);
   color: var(--text-faint);
   font-size: 13px;
   margin: 6px 0 2px;
@@ -1141,12 +1213,12 @@ h4 {
 }
 .chat-item:hover,
 .nav-item:hover {
-  background: var(--surface);
+  background: var(--glass-bg-soft);
   color: var(--text);
 }
 .chat-item.active,
 .nav-item.active {
-  background: var(--surface);
+  background: var(--glass-bg-soft);
   color: var(--text);
   box-shadow: 0 1px 4px var(--shadow);
 }
@@ -1190,7 +1262,7 @@ h4 {
   opacity: 0.8;
 }
 .chat-item .row-action:hover {
-  background: var(--bg-elev2);
+  background: var(--glass-bg-soft);
   color: var(--text);
   opacity: 1;
 }
@@ -1205,7 +1277,7 @@ h4 {
   transition: background 0.15s;
 }
 .sidebar-foot:hover {
-  background: var(--surface);
+  background: var(--glass-bg-soft);
 }
 .avatar {
   width: 30px;
@@ -1247,7 +1319,10 @@ h4 {
 }
 .theme-toggle {
   display: flex;
-  background: var(--bg-elev2);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
   border-radius: 8px;
   padding: 2px;
   gap: 2px;
@@ -1269,7 +1344,7 @@ h4 {
   height: 14px;
 }
 .theme-toggle button.active {
-  background: var(--surface);
+  background: var(--glass-bg-strong);
   color: var(--amber);
   box-shadow: 0 1px 3px var(--shadow);
 }
@@ -1283,7 +1358,11 @@ h4 {
 }
 .topbar {
   height: 54px;
-  border-bottom: 1px solid var(--border);
+  background: var(--glass-bg);
+  border-bottom: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
   display: flex;
   align-items: center;
   padding: 0 16px 0 12px;
@@ -1454,7 +1533,7 @@ h4 {
   border: none;
 }
 .msg-action:hover {
-  background: var(--bg-elev2);
+  background: var(--glass-bg-soft);
   color: var(--text);
 }
 .msg-action.on {
@@ -1492,7 +1571,7 @@ h4 {
   border-radius: 6px;
   display: grid;
   place-items: center;
-  background: var(--bg-elev2);
+  background: var(--glass-bg-soft);
   border: 1px solid var(--border);
   color: var(--text-dim);
   cursor: pointer;
@@ -1780,22 +1859,27 @@ h4 {
 /* ---------- ARTIFACT VIEWER (chat: open / preview a generated file) ---------- */
 .artifact-modal {
   width: min(1100px, 94vw);
-  height: min(760px, 90vh);
+  height: min(760px, 90dvh);
   display: flex;
   flex-direction: column;
-  background: var(--bg-elev);
-  border: 1px solid var(--border-bright);
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 30px 90px var(--shadow-strong);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow-strong);
 }
 .artifact-modal-head {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 9px 11px 9px 15px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-elev2);
+  border-bottom: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
   flex-shrink: 0;
 }
 .am-title {
@@ -1871,11 +1955,11 @@ h4 {
 .artifact {
   position: relative;
   margin: 14px 0;
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: 14px;
-  background: var(--surface);
+  background: var(--glass-bg-soft);
   overflow: hidden;
-  box-shadow: 0 4px 18px var(--shadow);
+  box-shadow: inset 0 1px 0 var(--glass-glow), 0 4px 18px var(--shadow);
 }
 .artifact.generating {
   border-color: color-mix(in srgb, var(--amber) 45%, var(--border));
@@ -1890,7 +1974,7 @@ h4 {
   transition: background 0.15s;
 }
 .artifact-main:hover {
-  background: var(--bg-elev);
+  background: var(--glass-bg-strong);
 }
 .artifact-thumb {
   width: 44px;
@@ -1959,8 +2043,8 @@ h4 {
   gap: 6px;
   padding: 7px 12px;
   border-radius: 9px;
-  border: 1px solid var(--border-bright);
-  background: var(--bg-elev);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg-soft);
   color: var(--text);
   font-size: 12.5px;
   font-weight: 500;
@@ -1979,8 +2063,8 @@ h4 {
   gap: 6px;
   padding: 7px 12px;
   border-radius: 9px;
-  border: 1px solid var(--border-bright);
-  background: var(--bg-elev);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg-soft);
   color: var(--text);
   font-size: 12.5px;
   font-weight: 500;
@@ -2066,12 +2150,12 @@ h4 {
   align-items: center;
   gap: 13px;
   padding: 14px 16px;
-  background: var(--surface);
-  border: 1px solid var(--border-bright);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 1px 4px var(--shadow);
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
   animation: fadeRise 0.4s ease both;
   width: 100%;
   text-align: left;
@@ -2125,16 +2209,18 @@ h4 {
 .composer {
   max-width: 760px;
   margin: 0 auto;
-  background: var(--surface);
-  border: 1px solid var(--border-bright);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 18px;
   padding: 14px 15px 11px;
   transition: border-color 0.25s, box-shadow 0.25s;
-  box-shadow: 0 6px 24px var(--shadow);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
 }
 .composer:focus-within {
   border-color: var(--amber);
-  box-shadow: 0 6px 24px var(--shadow), 0 0 0 3px var(--amber-glow);
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow), 0 0 0 3px var(--amber-glow);
 }
 .composer-input {
   font-family: inherit;
@@ -2249,7 +2335,9 @@ h4 {
   gap: 8px;
   border-radius: 16px;
   border: 2px dashed var(--amber);
-  background: color-mix(in srgb, var(--amber) 10%, var(--surface));
+  background: color-mix(in srgb, var(--amber) 10%, var(--glass-bg-strong));
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
   color: var(--text-dim);
   font-size: 13.5px;
   font-weight: 500;
@@ -2516,11 +2604,14 @@ h4 {
   bottom: calc(100% + 10px);
   left: 50%;
   width: 300px;
-  background: var(--menu);
-  border: 1px solid var(--border-bright);
-  border-radius: 14px;
+  max-width: calc(100vw - 32px);
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
   padding: 6px;
-  box-shadow: 0 16px 50px var(--shadow-strong);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow-strong);
   transform-origin: bottom center;
   z-index: 60;
 }
@@ -2648,11 +2739,13 @@ h4 {
   bottom: 0;
   left: calc(100% + 8px);
   width: 210px;
-  background: var(--menu);
-  border: 1px solid var(--border-bright);
-  border-radius: 14px;
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
   padding: 6px;
-  box-shadow: 0 16px 50px var(--shadow-strong);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow-strong);
   z-index: 70;
   transform-origin: bottom left;
 }
@@ -2744,11 +2837,13 @@ h4 {
   left: 0;
   width: 340px;
   max-width: calc(100vw - 40px);
-  background: var(--menu);
-  border: 1px solid var(--border-bright);
-  border-radius: 14px;
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
   padding: 6px;
-  box-shadow: 0 16px 50px var(--shadow-strong);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow-strong);
   z-index: 60;
   max-height: 340px;
   overflow-y: auto;
@@ -2842,13 +2937,18 @@ h4 {
   bottom: calc(100% + 8px);
   left: 0;
   right: 0;
-  background: var(--menu);
-  border: 1px solid var(--border-bright);
-  border-radius: 14px;
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
   padding: 6px;
-  box-shadow: 0 16px 50px var(--shadow-strong);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow-strong);
   z-index: 70;
   transform-origin: bottom center;
+  /* Never taller than the viewport on short/landscape phones — scroll inside. */
+  max-height: min(70dvh, 460px);
+  overflow-y: auto;
 }
 .acct-email {
   font-size: 12px;
@@ -2868,7 +2968,8 @@ h4 {
   margin-bottom: 4px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: var(--bg-elev);
+  background: var(--glass-bg-soft);
+  box-shadow: inset 0 1px 0 var(--glass-glow);
   color: var(--text);
   font-family: inherit;
   cursor: pointer;
@@ -2931,7 +3032,7 @@ h4 {
 }
 .acct-item:hover,
 .acct-item:focus-visible {
-  background: var(--bg-elev);
+  background: var(--glass-bg-soft);
   outline: none;
 }
 .acct-item svg {
@@ -3037,10 +3138,10 @@ h4 {
   align-items: center;
   gap: 13px;
   padding: 14px 16px;
-  background: var(--surface);
+  background: var(--glass-bg);
   border: 1px solid var(--amber);
   border-radius: var(--radius);
-  box-shadow: 0 4px 16px var(--amber-glow);
+  box-shadow: inset 0 1px 0 var(--glass-edge), 0 4px 16px var(--amber-glow);
 }
 .skill-card-icon {
   width: 40px;
@@ -3116,10 +3217,10 @@ h4 {
   align-items: stretch;
   gap: 12px;
   padding: 12px 14px;
-  background: var(--surface);
+  background: var(--glass-bg);
   border: 1px solid var(--amber);
   border-radius: var(--radius);
-  box-shadow: 0 4px 16px var(--amber-glow);
+  box-shadow: inset 0 1px 0 var(--glass-edge), 0 4px 16px var(--amber-glow);
   flex-wrap: wrap;
   max-width: 760px;
 }
@@ -3199,9 +3300,10 @@ h4 {
   align-items: center;
   gap: 14px;
   padding: 13px 16px;
-  background: var(--surface);
+  background: var(--glass-bg-soft);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  box-shadow: inset 0 1px 0 var(--glass-glow);
   transition: border-color 0.15s;
 }
 .skill-row:hover {
@@ -3265,7 +3367,7 @@ h4 {
 }
 .skill-badge.muted {
   color: var(--text-dim);
-  background: var(--bg-elev2);
+  background: var(--glass-bg-soft);
   border-color: var(--border);
 }
 
@@ -3286,13 +3388,16 @@ h4 {
 }
 .panel-head {
   height: 48px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--glass-border);
   display: flex;
   align-items: center;
   padding: 0 14px;
   gap: 10px;
   flex-shrink: 0;
-  background: var(--bg-elev2);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
 }
 .panel-tabs {
   display: flex;
@@ -3322,7 +3427,7 @@ h4 {
   height: 13px;
 }
 .panel-tab.active {
-  background: var(--surface);
+  background: var(--glass-bg-soft);
   color: var(--text);
   box-shadow: 0 1px 3px var(--shadow);
 }
@@ -3340,7 +3445,7 @@ h4 {
   flex-shrink: 0;
 }
 .panel-close:hover {
-  background: var(--surface);
+  background: var(--glass-bg-soft);
   color: var(--text);
 }
 .panel-close svg {
@@ -3411,7 +3516,7 @@ h4 {
 }
 .suggestion {
   padding: 10px 14px;
-  background: var(--surface);
+  background: var(--glass-bg-soft);
   border: 1px solid var(--border-bright);
   border-radius: var(--radius);
   font-size: 13px;
@@ -3430,9 +3535,11 @@ h4 {
 /* ---------- TOASTS ---------- */
 .toast-region {
   position: fixed;
-  bottom: 20px;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
   right: 20px;
-  z-index: 200;
+  /* Above every overlay (modal 250 / palette 300) — a toast fired while an
+     overlay is open must stay visible. */
+  z-index: 310;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -3443,10 +3550,12 @@ h4 {
   align-items: center;
   gap: 11px;
   padding: 12px 15px;
-  background: var(--menu);
-  border: 1px solid var(--border-bright);
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
-  box-shadow: 0 12px 40px var(--shadow-strong);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow-strong);
   font-size: 13.5px;
   color: var(--text);
   pointer-events: auto;
@@ -3473,8 +3582,9 @@ h4 {
 .cmdk-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(3px);
+  background: var(--scrim);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   z-index: 300;
   display: flex;
   align-items: flex-start;
@@ -3485,10 +3595,12 @@ h4 {
 .cmdk {
   width: 600px;
   max-width: calc(100vw - 32px);
-  background: var(--menu);
-  border: 1px solid var(--border-bright);
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
   border-radius: 16px;
-  box-shadow: 0 24px 70px var(--shadow-strong);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow-strong);
   overflow: hidden;
   animation: scaleIn 0.18s cubic-bezier(0.2, 0.9, 0.3, 1) both;
 }
@@ -3581,8 +3693,9 @@ kbd {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(2px);
+  background: var(--scrim);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   z-index: 250;
   display: flex;
   align-items: center;
@@ -3595,10 +3708,12 @@ kbd {
   max-width: 100%;
   max-height: calc(100dvh - 40px);
   overflow-y: auto;
-  background: var(--surface);
-  border: 1px solid var(--border-bright);
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
   border-radius: 16px;
-  box-shadow: 0 24px 70px var(--shadow-strong);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow-strong);
   animation: scaleIn 0.18s cubic-bezier(0.2, 0.9, 0.3, 1) both;
 }
 
@@ -3606,10 +3721,12 @@ kbd {
 .confirm-modal {
   width: 400px;
   max-width: calc(100vw - 32px);
-  background: var(--surface);
-  border: 1px solid var(--border-bright);
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
   border-radius: 16px;
-  box-shadow: 0 24px 70px var(--shadow-strong);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow-strong);
   padding: 24px;
   text-align: center;
   animation: scaleIn 0.2s cubic-bezier(0.2, 0.9, 0.3, 1) both;
@@ -3727,8 +3844,11 @@ kbd {
 /* Forge Code full-page upgrade prompt */
 .forge-code-upgrade { height: 100%; display: grid; place-items: center; padding: 40px 24px; }
 .fcu-card {
-  max-width: 440px; text-align: center; background: var(--surface);
-  border: 1px solid var(--border); border-radius: 18px; padding: 36px 32px;
+  max-width: 440px; text-align: center; background: var(--glass-bg);
+  border: 1px solid var(--glass-border); border-radius: 18px; padding: 36px 32px;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
 }
 .fcu-icon {
   width: 60px; height: 60px; border-radius: 16px; display: grid; place-items: center;
@@ -3754,7 +3874,10 @@ kbd {
 
 .billing-current {
   border: 1px solid var(--amber); border-radius: 14px; padding: 18px 20px;
-  background: color-mix(in srgb, var(--amber) 5%, var(--surface));
+  background: color-mix(in srgb, var(--amber) 5%, var(--glass-bg));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
 }
 .bc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .bc-label { font-size: 12px; font-weight: 700; color: var(--amber); text-transform: uppercase; letter-spacing: 0.04em; }
@@ -3772,8 +3895,11 @@ kbd {
 .bc-stat strong { color: var(--text); font-variant-numeric: tabular-nums; }
 
 .billing-period {
-  display: inline-flex; align-self: flex-start; background: var(--bg-elev2);
-  border: 1px solid var(--border); border-radius: 999px; padding: 3px; gap: 2px;
+  display: inline-flex; align-self: flex-start; background: var(--glass-bg);
+  border: 1px solid var(--glass-border); border-radius: 999px; padding: 3px; gap: 2px;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
 }
 .billing-period button {
   border: none; background: none; padding: 7px 16px; border-radius: 999px;
@@ -3786,10 +3912,11 @@ kbd {
 @media (max-width: 1024px) { .plan-cards { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 560px) { .plan-cards { grid-template-columns: 1fr; } }
 .plan-card {
-  position: relative; background: var(--surface); border: 1px solid var(--border);
+  position: relative; background: var(--glass-bg-soft); border: 1px solid var(--border);
   border-radius: 14px; padding: 18px 16px; display: flex; flex-direction: column;
+  box-shadow: inset 0 1px 0 var(--glass-glow);
 }
-.plan-card.current { border-color: var(--amber); background: color-mix(in srgb, var(--amber) 5%, var(--surface)); }
+.plan-card.current { border-color: var(--amber); background: color-mix(in srgb, var(--amber) 5%, var(--glass-bg-soft)); }
 .plan-badge {
   position: absolute; top: -9px; left: 50%; transform: translateX(-50%);
   font-size: 10.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap;
@@ -4075,11 +4202,44 @@ kbd {
   min-height: 0;
   min-width: 0;
 }
+/* Mobile project view — full-bleed live preview instead of the desktop IDE. */
+.ide-mobile {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+.ide-mobile-preview {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.ide-mobile-preview .preview-wrap {
+  flex: 1;
+  min-height: 0;
+}
+.ide-mobile-note {
+  flex-shrink: 0;
+  padding: 8px 14px calc(8px + env(safe-area-inset-bottom, 0px));
+  font-size: 11.5px;
+  color: var(--text-faint);
+  text-align: center;
+  border-top: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
+}
 .ide-tree {
   width: 240px;
   flex-shrink: 0;
-  border-right: 1px solid var(--border);
-  background: var(--bg-elev);
+  border-right: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -4094,8 +4254,11 @@ kbd {
 .ide-dock {
   width: 372px;
   flex-shrink: 0;
-  border-left: 1px solid var(--border);
-  background: var(--bg-elev);
+  border-left: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -4105,8 +4268,11 @@ kbd {
 .ide-tabbar {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-elev2);
+  border-bottom: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
   flex-shrink: 0;
   padding-right: 8px;
   gap: 8px;
@@ -4172,7 +4338,7 @@ kbd {
   gap: 7px;
   height: 28px;
   padding: 0 10px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: 8px;
   background: transparent;
   color: var(--text-dim);
@@ -4235,13 +4401,17 @@ kbd {
   font-size: 13.5px;
   padding: 24px;
   text-align: center;
-  background: var(--bg);
+  background: var(--glass-bg-soft);
+  box-shadow: inset 0 1px 0 var(--glass-glow);
 }
 .ide-statusbar {
   height: 28px;
   flex-shrink: 0;
-  background: var(--code-head);
+  background: color-mix(in srgb, var(--code-head) 88%, transparent);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border-top: 1px solid var(--code-border);
+  box-shadow: inset 0 1px 0 var(--glass-edge);
   display: flex;
   align-items: center;
   padding: 0 14px;
@@ -4377,11 +4547,13 @@ kbd {
   position: fixed;
   z-index: 80;
   min-width: 168px;
-  background: var(--menu);
-  border: 1px solid var(--border-bright);
-  border-radius: 10px;
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
   padding: 5px;
-  box-shadow: 0 16px 50px var(--shadow-strong);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow-strong);
 }
 .ft-menu-item {
   display: flex;
@@ -4484,7 +4656,10 @@ kbd {
 }
 .dock-head {
   padding: 10px 12px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   flex-shrink: 0;
 }
 .dock-seg button svg {
@@ -4556,15 +4731,18 @@ kbd {
 }
 /* ---- Build file panel (AI "agent at work": status + live diffs, no code) ---- */
 .build-files {
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: 12px;
-  background: var(--bg-elev2);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
   overflow: hidden;
   margin-top: 10px;
 }
 .build-files.working {
-  border-color: color-mix(in srgb, var(--amber) 45%, var(--border));
-  box-shadow: 0 12px 34px -16px color-mix(in srgb, var(--amber) 40%, transparent);
+  border-color: color-mix(in srgb, var(--amber) 45%, var(--glass-border));
+  box-shadow: inset 0 1px 0 var(--glass-edge), 0 12px 34px -16px color-mix(in srgb, var(--amber) 40%, transparent);
 }
 .bf-head {
   display: flex;
@@ -4575,7 +4753,8 @@ kbd {
   font-size: 12px;
   font-weight: 600;
   border-bottom: 1px solid var(--border);
-  background: var(--bg-elev);
+  background: var(--glass-bg-soft);
+  box-shadow: inset 0 1px 0 var(--glass-glow);
 }
 .bf-head-l {
   display: inline-flex;
@@ -4749,7 +4928,7 @@ kbd {
   padding: 3px 9px 3px 6px;
   border-radius: 999px;
   border: 1px solid var(--border-bright);
-  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
   font-size: 11px;
   font-weight: 700;
   color: var(--text-faint);
@@ -4781,15 +4960,18 @@ kbd {
 
 /* ---- Verifier verdict panel ---- */
 .verifier-panel {
-  border: 1px solid var(--border-bright);
+  border: 1px solid var(--glass-border);
   border-radius: 12px;
-  background: var(--surface);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
   padding: 11px 13px;
   margin-top: 10px;
 }
-.verifier-panel.pass { border-color: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 16%, transparent); }
+.verifier-panel.pass { border-color: var(--ok); box-shadow: inset 0 1px 0 var(--glass-edge), 0 0 0 3px color-mix(in srgb, var(--ok) 16%, transparent); }
 /* "Refining" reads as productive in-progress polish, not a failure stamp. */
-.verifier-panel.refining { border-color: color-mix(in srgb, var(--amber) 55%, var(--border-bright)); }
+.verifier-panel.refining { border-color: color-mix(in srgb, var(--amber) 55%, var(--glass-border)); }
 .vp-head { display: flex; align-items: center; gap: 8px; }
 .vp-badge {
   display: inline-flex;
@@ -4857,7 +5039,7 @@ kbd {
   font-size: 11.5px;
   font-weight: 600;
 }
-.ar-head:hover { background: var(--surface); }
+.ar-head:hover { background: color-mix(in srgb, var(--surface) 70%, transparent); }
 .ar-label { font-weight: 700; color: var(--text); }
 .ar-meta { color: var(--text-faint); font-weight: 500; }
 .ar-chev { margin-left: auto; transition: transform 0.2s; }
@@ -4890,8 +5072,10 @@ kbd {
 .build-plan {
   border: 1px solid var(--amber);
   border-radius: 12px;
-  background: var(--surface);
-  box-shadow: 0 8px 24px var(--amber-glow);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), 0 8px 24px var(--amber-glow);
   padding: 13px 15px;
   margin-top: 10px;
 }
@@ -4947,9 +5131,12 @@ kbd {
 
 /* ---- Planning dropdown (live plan drafting, so it never feels stuck) ---- */
 .planning-panel {
-  border: 1px solid var(--border-bright);
+  border: 1px solid var(--glass-border);
   border-radius: 11px;
-  background: var(--bg-elev2);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
   overflow: hidden;
   margin-top: 8px;
 }
@@ -4991,9 +5178,12 @@ kbd {
 
 .dock-composer {
   flex-shrink: 0;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--glass-border);
   padding: 10px 12px 12px;
-  background: var(--bg-elev);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
 }
 .dock-composer .composer-input {
   width: 100%;
@@ -5018,7 +5208,11 @@ kbd {
   align-items: center;
   gap: 7px;
   padding: 0 10px;
-  border-bottom: 1px solid var(--border);
+  background: var(--glass-bg);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 var(--glass-edge);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 }
 .preview-bar .tl {
   width: 11px;
@@ -5037,15 +5231,20 @@ kbd {
 }
 .preview-url {
   flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-align: center;
   font-family: var(--font-mono);
   font-size: 11.5px;
   color: var(--text-faint);
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: var(--glass-bg-soft);
+  border: 1px solid var(--glass-border);
   border-radius: 7px;
   padding: 4px 10px;
   margin: 0 6px;
+  box-shadow: inset 0 1px 0 var(--glass-glow);
 }
 .preview-bar .icon-btn {
   width: 28px;
@@ -5070,11 +5269,13 @@ kbd {
   z-index: 2;
   font-size: 12px;
   color: var(--text-dim);
-  background: var(--menu);
-  border: 1px solid var(--border-bright);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 100px;
   padding: 5px 12px;
-  box-shadow: 0 4px 16px var(--shadow);
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 }
 .preview-empty {
   flex: 1;
@@ -5085,9 +5286,10 @@ kbd {
   gap: 12px;
   color: var(--text-dim);
   font-size: 14px;
-  background: var(--bg);
+  background: var(--glass-bg-soft);
   padding: 24px;
   text-align: center;
+  box-shadow: inset 0 1px 0 var(--glass-glow);
 }
 
 /* ---- Script runner pane ---- */
@@ -5106,7 +5308,11 @@ kbd {
   align-items: center;
   gap: 8px;
   padding: 0 10px;
-  border-bottom: 1px solid var(--border);
+  background: var(--glass-bg);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 var(--glass-edge);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 }
 .runner-title {
   display: inline-flex;
@@ -5150,17 +5356,19 @@ kbd {
 }
 .runner-info {
   padding: 10px 12px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: 8px;
-  background: var(--surface);
+  background: var(--glass-bg-soft);
+  box-shadow: inset 0 1px 0 var(--glass-glow);
 }
 .runner-stdin {
   display: grid;
   gap: 7px;
   padding: 10px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: 8px;
-  background: var(--surface);
+  background: var(--glass-bg-soft);
+  box-shadow: inset 0 1px 0 var(--glass-glow);
 }
 .runner-status {
   font-weight: 700;
@@ -5207,9 +5415,10 @@ kbd {
 .scrim {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--scrim);
   z-index: 40;
-  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 .mobile-only {
   display: none !important;
@@ -5444,3 +5653,136 @@ kbd {
   animation: fadeRise 0.35s var(--ease-smooth) both, esFloat 3.4s ease-in-out 0.35s infinite;
 }
 .dock-empty p { animation: fadeRise 0.35s var(--ease-smooth) 0.08s both; }
+
+
+/* ---------- MOBILE + TOUCH REFINEMENTS (2026-07 mobile audit) ----------
+   Confirmed findings from the 44-agent mobile sweep. Appended last so these
+   override the base rules on small viewports / touch devices only. */
+
+/* Touch devices have no persistent hover — hover-revealed controls must be
+   visible, and primary targets need real hit areas. */
+@media (hover: none) {
+  .msg-actions {
+    opacity: 1;
+  }
+  .project-del {
+    opacity: 1;
+    width: 36px;
+    height: 36px;
+  }
+  .chat-item .row-action {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 860px) {
+  /* Project-page topbar: History/Download/Publish become icon-only so the
+     row's min-content width fits 320px (text is otherwise clipped by .app). */
+  .topbar .btn-ghost {
+    font-size: 0;
+    gap: 0;
+    padding: 9px;
+  }
+  .topbar .btn-ghost svg {
+    width: 17px;
+    height: 17px;
+  }
+  /* Primary nav/touch controls get real hit areas. */
+  .icon-btn {
+    width: 40px;
+    height: 40px;
+  }
+  .theme-toggle button {
+    width: 34px;
+    height: 32px;
+  }
+  .segmented button {
+    min-height: 38px;
+  }
+  .chat-item .row-action {
+    width: 32px;
+    height: 32px;
+  }
+  /* Toasts stack above the composer (they shared the bottom-right corner
+     with the send button) and span the width on phones. */
+  .toast-region {
+    left: 12px;
+    right: 12px;
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    align-items: center;
+  }
+  /* Artifact side-panel header: segmented labels compact, close always
+     reachable. */
+  .panel-head {
+    flex-wrap: wrap;
+    row-gap: 6px;
+    height: auto;
+    min-height: 48px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+  .panel-close {
+    margin-left: auto;
+  }
+  /* Chat thread breathes on phones (was desktop's 28px per side). */
+  .thread {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  /* The preview bar is the phone's primary Forge Code surface — real touch
+     targets and a taller bar. */
+  .preview-bar {
+    height: 44px;
+    overflow: hidden;
+  }
+  .preview-bar .icon-btn {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Composer bar: allow wrapping instead of pushing send off-screen; the
+     send button keeps right alignment on its row. */
+  .composer-bar {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .composer-bar .send-btn {
+    margin-left: auto;
+  }
+  .agent-trigger-label {
+    display: none;
+  }
+  /* Generated-file cards + code-block headers: actions wrap to a second
+     line instead of being clipped by overflow:hidden. */
+  .artifact-main {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .code-head {
+    flex-wrap: wrap;
+    row-gap: 6px;
+    height: auto;
+    min-height: 38px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+  /* Skills/Agents management rows: actions drop to their own line. */
+  .skill-row {
+    flex-wrap: wrap;
+  }
+  .skill-row-actions {
+    flex-basis: 100%;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+  .msg-action {
+    width: 36px;
+    height: 36px;
+  }
+  .panel-close {
+    width: 40px;
+    height: 40px;
+  }
+}

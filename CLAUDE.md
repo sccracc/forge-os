@@ -24,7 +24,9 @@ account, one file system, one design language:
 ## Stack
 
 Next.js 16 (App Router, RSC) · TypeScript strict · Tailwind v4 (CSS-first) ·
-Firebase (Auth + Storage for binary blobs) + Admin SDK · **Supabase/Postgres is
+**Supabase Auth (Google OAuth, PKCE redirect — replaced Firebase popup auth,
+which broke on storage-partitioned mobile browsers)** · Firebase retained only
+as a legacy binary-blob Storage fallback · **Supabase/Postgres is
 the primary data store** (conversations, messages, projects, files, skills,
 agents, checkpoints, usage, billing — all via server-only service-role routes
 under `app/api/data/**`; `supabase/schema.sql`) · AI SDK v6 deps present, but
@@ -58,8 +60,9 @@ react-markdown + KaTeX · Vitest.
 
 ## Phase status
 
-- **Phase 1 — Foundation & Chat: COMPLETE.** Molten + theming, Firebase auth +
-  gate, shell (sidebar, mode-switcher scaffold, command palette, shortcuts),
+- **Phase 1 — Foundation & Chat: COMPLETE.** Molten + theming, Supabase Google
+  auth + gate (legacy uids resolved by verified email in `verifyRequest`),
+  shell (sidebar, mode-switcher scaffold, command palette, shortcuts),
   streaming chat (both models, thinking, 5 efforts, continuation loop, sampling),
   composer + §5.7 menu, persistence, branching/edit/regenerate, settings, tests.
 - Phases 2–7: file system, Forge Code IDE, artifacts/docgen/exec, projects/memory,

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAuth } from "@/components/auth/auth-provider";
 import { ForgeMark } from "@/components/icons";
@@ -29,13 +29,26 @@ function GoogleG() {
   );
 }
 
-export default function SignInPage() {
+function SignInCard() {
   const { user, loading, configured, signInGoogle } = useAuth();
   const router = useRouter();
+  const params = useSearchParams();
+  // Friendly message forwarded from a failed OAuth round trip (/auth/callback).
+  const [error, setError] = useState<string | null>(() => params.get("error"));
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
     if (user) router.replace("/");
   }, [user, router]);
+
+  const startSignIn = async () => {
+    setError(null);
+    setRedirecting(true);
+    await signInGoogle();
+    // If we're still here after a beat, the redirect didn't happen (an error
+    // toast explains why) — re-enable the button.
+    setTimeout(() => setRedirecting(false), 4000);
+  };
 
   return (
     <div
@@ -52,14 +65,13 @@ export default function SignInPage() {
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.2, 0.7, 0.3, 1] }}
+        className="glass-strong"
         style={{
-          width: 400,
-          maxWidth: "100%",
-          background: "var(--surface)",
-          border: "1px solid var(--border-bright)",
+          // min() (not maxWidth:100%): inside a content-sized grid track a
+          // percentage max-width can't resolve and the card overflows phones.
+          width: "min(400px, calc(100vw - 32px))",
           borderRadius: 20,
-          padding: "36px 32px",
-          boxShadow: "0 20px 60px var(--shadow-strong)",
+          padding: "36px clamp(18px, 6vw, 32px)",
           textAlign: "center",
         }}
       >
@@ -83,6 +95,25 @@ export default function SignInPage() {
           Your integrated AI workspace. Chat, build, and ship — all in one place.
         </p>
 
+        {error && (
+          <div
+            role="alert"
+            style={{
+              fontSize: 13,
+              color: "var(--danger)",
+              background: "color-mix(in srgb, var(--danger) 8%, transparent)",
+              border: "1px solid var(--danger)",
+              borderRadius: "var(--radius-sm)",
+              padding: "10px 13px",
+              lineHeight: 1.55,
+              marginBottom: 14,
+              textAlign: "left",
+            }}
+          >
+            {error}
+          </div>
+        )}
+
         {configured ? (
           <button
             className="btn-ghost"
@@ -93,10 +124,16 @@ export default function SignInPage() {
               fontSize: 14.5,
               fontWeight: 600,
             }}
-            onClick={signInGoogle}
-            disabled={loading}
+            onClick={startSignIn}
+            disabled={loading || redirecting}
           >
-            <GoogleG /> Continue with Google
+            {redirecting ? (
+              <>Redirecting to Google…</>
+            ) : (
+              <>
+                <GoogleG /> Continue with Google
+              </>
+            )}
           </button>
         ) : (
           <div
@@ -110,8 +147,8 @@ export default function SignInPage() {
               lineHeight: 1.6,
             }}
           >
-            Sign-in becomes available once Firebase environment variables are
-            configured for this deployment.
+            Sign-in becomes available once authentication environment variables
+            are configured for this deployment.
           </div>
         )}
 
@@ -120,5 +157,14 @@ export default function SignInPage() {
         </p>
       </motion.div>
     </div>
+  );
+}
+
+// useSearchParams requires a Suspense boundary at the page level.
+export default function SignInPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignInCard />
+    </Suspense>
   );
 }

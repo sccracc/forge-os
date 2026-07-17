@@ -30,6 +30,7 @@ export default function PublishedPage() {
   return (
     <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", zIndex: 5, background: "var(--bg)" }}>
       <div
+        className="glass"
         style={{
           height: 46,
           flexShrink: 0,
@@ -37,15 +38,26 @@ export default function PublishedPage() {
           alignItems: "center",
           gap: 10,
           padding: "0 16px",
-          borderBottom: "1px solid var(--border)",
-          background: "var(--bg-elev)",
+          border: "none",
+          borderBottom: "1px solid var(--glass-border)",
         }}
       >
         <div className="logo-mark" style={{ width: 26, height: 26, borderRadius: 7 }}>
           <ForgeMark style={{ width: 15, height: 15, color: "var(--on-accent)" }} />
         </div>
-        <span style={{ fontWeight: 600, fontSize: 14 }}>{name || "Forge OS"}</span>
-        <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--text-faint)" }}>
+        <span
+          style={{
+            fontWeight: 600,
+            fontSize: 14,
+            minWidth: 0,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {name || "Forge OS"}
+        </span>
+        <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--text-faint)", flexShrink: 0 }}>
           Published with Forge OS
         </span>
       </div>

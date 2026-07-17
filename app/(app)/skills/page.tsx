@@ -78,8 +78,8 @@ export default function SkillsPage() {
       <div className="content-area">
         <div style={{ flex: 1, overflowY: "auto", padding: "28px 24px" }}>
           <div style={{ maxWidth: 820, margin: "0 auto" }}>
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 22 }}>
-              <div style={{ flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 22, flexWrap: "wrap" }}>
+              <div style={{ flex: 1, minWidth: 220 }}>
                 <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 6 }}>Skills</h1>
                 <p style={{ color: "var(--text-dim)", fontSize: 14, lineHeight: 1.6 }}>
                   Reusable instruction sets. Invoke any enabled skill from the composer with{" "}
