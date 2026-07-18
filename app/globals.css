@@ -2437,7 +2437,9 @@ h4 {
   border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   cursor: pointer;
-  transition: all 0.2s;
+  /* Family 21 tilt language: transform/shadow ease on --ease-smooth. */
+  transition: border-color 0.22s, background 0.2s,
+    transform 0.25s var(--ease-smooth), box-shadow 0.25s;
   box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
   animation: fadeRise 0.4s ease both;
   width: 100%;
@@ -3833,7 +3835,9 @@ h4 {
   font-size: 13px;
   color: var(--text-dim);
   cursor: pointer;
-  transition: all 0.18s;
+  /* Family 21 tilt language: transform/shadow ease on --ease-smooth. */
+  transition: border-color 0.18s, color 0.18s, background 0.18s,
+    transform 0.25s var(--ease-smooth), box-shadow 0.25s;
   text-align: left;
 }
 .suggestion:hover {
@@ -6041,6 +6045,10 @@ kbd {
 .menu-cascade :is(.menu-item, .effort-item, .popover-item, .acct-item, .acct-usage, .acct-theme-row):nth-child(7) { animation-delay: 0.2s; }
 .menu-cascade :is(.menu-item, .effort-item, .popover-item, .acct-item, .acct-usage, .acct-theme-row):nth-child(n + 8) { animation-delay: 0.23s; }
 @keyframes menuItemIn { from { opacity: 0; transform: translateY(5px); } }
+/* opt-out hook: panels whose items re-render while open (the "/" skill
+   pickers re-filter per keystroke) add .settled once the open cascade has
+   played, so re-rendered rows appear instantly instead of replaying. */
+.menu-cascade.settled :is(.menu-item, .effort-item, .popover-item, .acct-item, .acct-usage, .acct-theme-row) { animation: none; }
 
 /* ---- Usage indicator: family 31 A "Ember breathe" — the text stays legible
    while a soft ember bloom breathes behind it ---- */

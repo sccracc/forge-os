@@ -34,7 +34,8 @@ function Bar({ pct }: { pct: number }) {
           width: `${Math.min(100, Math.max(0, pct))}%`,
           background: progressColor(pct),
           borderRadius: 6,
-          transition: "width .3s ease",
+          // Family 14: determinate fills ease on --ease-smooth (inline equivalent).
+          transition: "width .3s cubic-bezier(0.2, 0.8, 0.2, 1)",
         }}
       />
     </div>

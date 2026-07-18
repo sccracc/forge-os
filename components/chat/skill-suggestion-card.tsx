@@ -38,9 +38,10 @@ export function SkillSuggestionActions({
   return (
     <motion.div
       className="skill-suggest"
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.22 }}
+      // Family 06 focus-rise: blur-in as the card rises.
+      initial={{ opacity: 0, y: 6, filter: "blur(5px)" }}
+      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      transition={{ duration: 0.3, ease: [0.2, 0.8, 0.2, 1] }}
     >
       <div className="skill-suggest-list">
         {skills.map((skill) => (

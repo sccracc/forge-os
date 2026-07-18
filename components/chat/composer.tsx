@@ -115,6 +115,20 @@ export function Composer({
 
   useEffect(() => setPickerIndex(0), [pickerQuery]);
 
+  // #07 · presentational: once the open cascade has played (~500ms covers the
+  // longest item delay + duration), `.settled` disables the item entrances so
+  // rows that re-render on filter keystrokes appear instantly instead of
+  // replaying their delayed cascade.
+  const [pickerSettled, setPickerSettled] = useState(false);
+  useEffect(() => {
+    if (!pickerOpen) {
+      setPickerSettled(false);
+      return;
+    }
+    const t = setTimeout(() => setPickerSettled(true), 500);
+    return () => clearTimeout(t);
+  }, [pickerOpen]);
+
   useEffect(() => {
     if (autoFocus) taRef.current?.focus();
   }, [autoFocus]);
@@ -627,7 +641,10 @@ export function Composer({
         {/* slash / skills picker */}
         <AnimatePresence>
           {pickerOpen && (
-            <div className="popover" style={{ left: 4, bottom: "calc(100% + 8px)" }}>
+            <div
+              className={`popover menu-cascade${pickerSettled ? " settled" : ""}`}
+              style={{ left: 4, bottom: "calc(100% + 8px)" }}
+            >
               {pickerResults.length === 0 ? (
                 <div className="popover-empty">
                   {skills.length === 0

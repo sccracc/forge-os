@@ -40,9 +40,10 @@ export function SearchStatus({ searches, live }: { searches?: SearchState[]; liv
             <motion.div
               key={s.id}
               className="search-block"
-              initial={{ opacity: 0, y: 3 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
+              // Family 06 focus-rise: blur-in as the block rises.
+              initial={{ opacity: 0, y: 3, filter: "blur(4px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ duration: 0.25 }}
             >
               <motion.div
                 layout

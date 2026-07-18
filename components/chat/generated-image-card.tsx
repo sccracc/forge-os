@@ -84,8 +84,10 @@ export function GeneratedImage({ done, loadingText, imageUrl, prompt, error, not
           <div className="generated-image-loading">
             <motion.span
               className="gi-emoji"
-              animate={{ rotate: [0, 14, -14, 0] }}
-              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+              // Family 15 glow-breathe: calm scale pulse (matches the auth
+              // logo treatment) instead of the old rotate wobble.
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
             >
               🎨
             </motion.span>

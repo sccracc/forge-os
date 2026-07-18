@@ -596,6 +596,20 @@ export function BuildDock({
     ? Math.min(pickerIndex, pickerResults.length - 1)
     : 0;
 
+  // #07 · presentational: once the open cascade has played (~500ms covers the
+  // longest item delay + duration), `.settled` disables the item entrances so
+  // rows that re-render on filter keystrokes appear instantly instead of
+  // replaying their delayed cascade.
+  const [pickerSettled, setPickerSettled] = useState(false);
+  useEffect(() => {
+    if (!pickerOpen) {
+      setPickerSettled(false);
+      return;
+    }
+    const t = setTimeout(() => setPickerSettled(true), 500);
+    return () => clearTimeout(t);
+  }, [pickerOpen]);
+
   const selectSkill = (s: Skill) => {
     addSkill(s.slug);
     setDraft("");
@@ -1641,7 +1655,10 @@ export function BuildDock({
 
         <AnimatePresence>
           {pickerOpen && (
-            <div className="popover" style={{ left: 12, right: 12, width: "auto", bottom: "calc(100% + 6px)" }}>
+            <div
+              className={`popover menu-cascade${pickerSettled ? " settled" : ""}`}
+              style={{ left: 12, right: 12, width: "auto", bottom: "calc(100% + 6px)" }}
+            >
               {pickerResults.length === 0 ? (
                 <div className="popover-empty">
                   {enabledSkills.length === 0 ? "No skills yet. Create one in Skills." : "No matching skills."}
