@@ -110,7 +110,11 @@ export function SearchStatus({ searches, live }: { searches?: SearchState[]; liv
                     return (
                       <motion.a
                         key={`${s.id}-${i}`}
-                        className="source-pill"
+                        // Family 33 "Glint verdict": pills mount the moment the
+                        // verdict check lands (they render only once s.done), so
+                        // `.glinted` fires the one-shot CSS glint sweep — live
+                        // searches only; persisted mounts must not replay it.
+                        className={`source-pill${live ? " glinted" : ""}`}
                         href={src.url}
                         target="_blank"
                         rel="noopener noreferrer"

@@ -48,9 +48,23 @@ export function CommandPalette() {
   const [active, setActive] = useState(0);
   const [mounted, setMounted] = useState(false);
   const [padLeft, setPadLeft] = useState(0);
+  // #46 · presentational: once the open unfold has played (~1.3s covers the
+  // longest cascade delay), `.settled` disables the entrance animations so
+  // rows that remount on re-filter (broadening the query, the empty state)
+  // appear instantly instead of replaying their delayed cascade.
+  const [settled, setSettled] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!open) {
+      setSettled(false);
+      return;
+    }
+    const t = setTimeout(() => setSettled(true), 1300);
+    return () => clearTimeout(t);
+  }, [open]);
 
   // Global hotkeys: ⌘K / Ctrl-K toggles; "?" opens shortcuts when idle.
   useEffect(() => {
@@ -284,7 +298,12 @@ export function CommandPalette() {
         if (e.target === e.currentTarget) close();
       }}
     >
-      <div className="cmdk" role="dialog" aria-modal="true" aria-label="Command palette">
+      <div
+        className={`cmdk${settled ? " settled" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
+      >
         <div className="cmdk-input-wrap">
           <Search />
           <input
@@ -314,7 +333,8 @@ export function CommandPalette() {
           />
           <kbd>esc</kbd>
         </div>
-        <div className="cmdk-list">
+        {/* #46 · stable contract classes: .cmdk-results (unfold) + .cmdk-foot (hint lands last) */}
+        <div className="cmdk-list cmdk-results">
           {filtered.length === 0 && (
             <div className="cmdk-empty">No matching commands</div>
           )}
@@ -342,6 +362,9 @@ export function CommandPalette() {
               })}
             </div>
           ))}
+        </div>
+        <div className="cmdk-foot" aria-hidden>
+          ↑↓ navigate · ↵ select
         </div>
       </div>
     </div>,

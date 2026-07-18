@@ -27,9 +27,22 @@ export function ModeSwitcher() {
       });
       return;
     }
-    setMode(code ? "code" : "chat");
-    setMobileSidebarOpen(false);
-    router.push(code ? "/code" : "/");
+    const navigate = () => {
+      setMode(code ? "code" : "chat");
+      setMobileSidebarOpen(false);
+      router.push(code ? "/code" : "/");
+    };
+    // #43 · Depth trade — when the browser supports View Transitions, the whole
+    // workspace trades depth (old recedes, new arrives; styled in globals.css).
+    // Navigation is identical either way — the API only wraps the same calls.
+    const doc = document as Document & {
+      startViewTransition?: (cb: () => void) => unknown;
+    };
+    if (typeof doc.startViewTransition === "function") {
+      doc.startViewTransition(navigate);
+    } else {
+      navigate();
+    }
   };
 
   return (

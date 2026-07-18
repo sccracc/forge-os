@@ -59,6 +59,40 @@ export function Sidebar() {
   const [search, setSearch] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
 
+  // #37 · Focus ripple — transient ".arriving" class (~600ms) on rows that are
+  // NEW after the initial load (a freshly created conversation), so the CSS
+  // ripple ring fires only for real arrivals, never on first paint.
+  const knownIdsRef = useRef<Set<string> | null>(null);
+  const arrivingTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const [arrivingIds, setArrivingIds] = useState<Set<string>>(() => new Set());
+  useEffect(() => {
+    if (knownIdsRef.current === null) {
+      if (!loading) knownIdsRef.current = new Set(conversations.map((c) => c.id));
+      return;
+    }
+    const known = knownIdsRef.current;
+    const fresh = conversations.filter((c) => !known.has(c.id)).map((c) => c.id);
+    if (fresh.length === 0) return;
+    for (const id of fresh) known.add(id);
+    setArrivingIds((prev) => {
+      const next = new Set(prev);
+      for (const id of fresh) next.add(id);
+      return next;
+    });
+    const t = setTimeout(() => {
+      setArrivingIds((prev) => {
+        const next = new Set(prev);
+        for (const id of fresh) next.delete(id);
+        return next;
+      });
+    }, 600);
+    arrivingTimersRef.current.push(t);
+  }, [conversations, loading]);
+  useEffect(() => {
+    const timers = arrivingTimersRef.current;
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
   useEffect(() => {
     const focus = () => searchRef.current?.focus();
     window.addEventListener("forge:focus-search", focus);
@@ -220,11 +254,25 @@ export function Sidebar() {
                         <motion.div
                           key={c.id}
                           layout
-                          initial={{ opacity: 0, x: -12, filter: "blur(4px)" }}
-                          animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-                          exit={{ opacity: 0, x: 14 }}
-                          transition={{ duration: 0.26, ease: [0.2, 0.8, 0.2, 1] }}
-                          className={`chat-item ${activeCid === c.id ? "active" : ""}`}
+                          /* #37 C · Focus ripple — the slot opens (layout), then
+                             the row focuses in place from a soft blur; delete
+                             dissolves up off the surface (no x-slide). */
+                          initial={{ opacity: 0, scale: 0.985, filter: "blur(6px)" }}
+                          animate={{
+                            opacity: 1,
+                            scale: 1,
+                            filter: "blur(0px)",
+                            transition: { duration: 0.33, delay: 0.17, ease: [0.2, 0.8, 0.2, 1] },
+                          }}
+                          exit={{
+                            opacity: 0,
+                            y: -6,
+                            scale: 1.04,
+                            filter: "blur(2.5px)",
+                            transition: { duration: 0.28, ease: [0.2, 0.8, 0.2, 1] },
+                          }}
+                          transition={{ duration: 0.2, ease: [0.2, 0.8, 0.2, 1] }}
+                          className={`chat-item ${activeCid === c.id ? "active" : ""} ${arrivingIds.has(c.id) ? "arriving" : ""}`}
                           onClick={() => go(`/c/${c.id}`)}
                           onKeyDown={(e) => {
                             if (e.key === "Enter" || e.key === " ") {

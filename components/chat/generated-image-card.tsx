@@ -67,12 +67,18 @@ export function GeneratedImage({ done, loadingText, imageUrl, prompt, error, not
     <div className="generated-image-card">
       <div className="generated-image-frame">
         {(!done || !loaded) && (
-          <motion.div
-            aria-hidden
-            className="generated-image-shimmer"
-            animate={{ opacity: [0.45, 1, 0.45] }}
-            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-          />
+          <>
+            <motion.div
+              aria-hidden
+              className="generated-image-shimmer"
+              animate={{ opacity: [0.45, 1, 0.45] }}
+              transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+            />
+            {/* Family 36 "Latent drift": two blurred latents wander the frame
+                while generating (CSS transform loops on .latent-a/.latent-b). */}
+            <span className="latent-a" aria-hidden />
+            <span className="latent-b" aria-hidden />
+          </>
         )}
         {!done && (
           <div className="generated-image-loading">
@@ -96,9 +102,11 @@ export function GeneratedImage({ done, loadingText, imageUrl, prompt, error, not
               if (el && el.complete && el.naturalWidth > 0) setLoaded(true);
             }}
             onLoad={() => setLoaded(true)}
-            initial={reveal ? { opacity: 0, scale: 1.05, filter: "blur(6px)" } : false}
+            // Family 36 condense: the image resolves out of the latents —
+            // blur+scale collapse on the demo's longer curve (f36c-img).
+            initial={reveal ? { opacity: 0, scale: 1.06, filter: "blur(7px)" } : false}
             animate={loaded ? { opacity: 1, scale: 1, filter: "blur(0px)" } : { opacity: 0 }}
-            transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
+            transition={{ duration: 0.8, ease: [0.2, 0.8, 0.2, 1] }}
           />
         )}
       </div>

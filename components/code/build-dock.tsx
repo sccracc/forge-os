@@ -505,6 +505,35 @@ export function BuildDock({
   const taRef = useRef<HTMLTextAreaElement>(null);
   const acRef = useRef<AbortController | null>(null);
 
+  // #42 · Ignition wave — purely presentational lifecycle beats on the dock
+  // root, derived from the EXISTING streaming status: "dock-igniting" for
+  // ~900ms when a build starts, "dock-complete" for ~1400ms when one finishes
+  // successfully (the success path always passes through "finalizing").
+  const [dockBeat, setDockBeat] = useState<"" | "dock-igniting" | "dock-complete">("");
+  const dockBeatTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevBuildRef = useRef<{ active: boolean; phase: BuildPhase | null }>({
+    active: false,
+    phase: null,
+  });
+  useEffect(() => {
+    const active = Boolean(streaming && streaming.mode === "build" && streaming.phase !== "error");
+    const prev = prevBuildRef.current;
+    const beat = (cls: "dock-igniting" | "dock-complete", ms: number) => {
+      setDockBeat(cls);
+      if (dockBeatTimerRef.current) clearTimeout(dockBeatTimerRef.current);
+      dockBeatTimerRef.current = setTimeout(() => setDockBeat(""), ms);
+    };
+    if (active && !prev.active) beat("dock-igniting", 900);
+    else if (!active && prev.active && prev.phase === "finalizing") beat("dock-complete", 1400);
+    prevBuildRef.current = { active, phase: active ? (streaming?.phase ?? null) : null };
+  }, [streaming]);
+  useEffect(
+    () => () => {
+      if (dockBeatTimerRef.current) clearTimeout(dockBeatTimerRef.current);
+    },
+    []
+  );
+
   const model = useComposerStore((s) => s.model);
   const setModel = useComposerStore((s) => s.setModel);
   const effort = useComposerStore((s) => s.effort);
@@ -1467,7 +1496,7 @@ export function BuildDock({
   const isStreaming = Boolean(streaming && streaming.phase !== "error");
 
   return (
-    <div className="build-dock">
+    <div className={`build-dock${dockBeat ? ` ${dockBeat}` : ""}`}>
       <div className="dock-head">
         <div className="segmented dock-seg">
           <div className="seg-thumb" style={{ left: mode === "build" ? "3px" : "calc(50% + 1px)", right: mode === "build" ? "calc(50% + 1px)" : "3px", transition: "left .3s cubic-bezier(.34,1.56,.64,1), right .3s cubic-bezier(.34,1.56,.64,1)" }} />

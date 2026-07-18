@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { SparkFilled } from "@/components/icons";
 import { Markdown } from "./markdown";
@@ -28,6 +29,21 @@ export function StreamingMessage({
   onUseSuggestion?: () => void;
   onDeclineSuggestion?: () => void;
 }) {
+  // Family 25 — "Identity flip": when an agent takes over the reply, the
+  // avatar flips from the Forge mark to the agent glyph. Presentational only:
+  // a transient class held for ~700ms while the flip choreography plays.
+  const hasAgent = Boolean(state.activeAgent);
+  const [handoff, setHandoff] = useState(hasAgent);
+  useEffect(() => {
+    if (!hasAgent) {
+      setHandoff(false);
+      return;
+    }
+    setHandoff(true);
+    const t = setTimeout(() => setHandoff(false), 760);
+    return () => clearTimeout(t);
+  }, [hasAgent]);
+
   const reasoningActive = state.phase === "reasoning";
   const hasContent = state.content.length > 0;
   const isError = state.phase === "error";
@@ -48,9 +64,18 @@ export function StreamingMessage({
 
   return (
     <div className={`msg ai${isError ? "" : " streaming"}`}>
-      <div className="msg-avatar">
+      <div className={`msg-avatar${handoff ? " handoff" : ""}`}>
         {state.activeAgent ? (
-          <span className="agent-avatar-glyph">{state.activeAgent.avatar || "AI"}</span>
+          handoff ? (
+            <>
+              <span className="face-out" aria-hidden>
+                <SparkFilled style={{ width: 16, height: 16 }} />
+              </span>
+              <span className="face-in">{state.activeAgent.avatar || "AI"}</span>
+            </>
+          ) : (
+            <span className="agent-avatar-glyph">{state.activeAgent.avatar || "AI"}</span>
+          )
         ) : (
           <SparkFilled style={{ width: 16, height: 16 }} />
         )}
@@ -59,7 +84,7 @@ export function StreamingMessage({
         <div className="msg-name">
           {state.activeAgent ? (
             <>
-              {state.activeAgent.name}
+              <span className="name-swap">{state.activeAgent.name}</span>
               <span className="agent-name-tag">Agent</span>
             </>
           ) : (

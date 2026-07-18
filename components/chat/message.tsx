@@ -42,9 +42,12 @@ interface MessageProps {
   /** True when this message replaces a live stream in place — the content is
    *  already on screen, so the entrance animation must not replay. */
   noEntrance?: boolean;
+  /** Family 44 — transient launch beat on the optimistically appended user
+   *  message (~500ms). Purely presentational. */
+  justSent?: boolean;
 }
 
-export function Message({ node, userInitial, onRegenerate, onEdit, onBranch, noEntrance }: MessageProps) {
+export function Message({ node, userInitial, onRegenerate, onEdit, onBranch, noEntrance, justSent }: MessageProps) {
   const isUser = node.role === "user";
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -76,7 +79,7 @@ export function Message({ node, userInitial, onRegenerate, onEdit, onBranch, noE
   };
 
   return (
-    <div className={`msg ${isUser ? "user" : "ai"}${noEntrance ? " msg-static" : ""}`}>
+    <div className={`msg ${isUser ? "user" : "ai"}${noEntrance ? " msg-static" : ""}${justSent ? " just-sent" : ""}`}>
       <div className="msg-avatar">
         {isUser ? (
           userInitial
@@ -264,7 +267,14 @@ export function Message({ node, userInitial, onRegenerate, onEdit, onBranch, noE
                     {tts.status === "loading" ? (
                       <span className="tts-spinner" aria-hidden />
                     ) : tts.status === "playing" ? (
-                      <Square size={13} fill="currentColor" />
+                      <>
+                        <Square size={13} fill="currentColor" />
+                        <span className="tts-eq" aria-hidden>
+                          <i />
+                          <i />
+                          <i />
+                        </span>
+                      </>
                     ) : (
                       <Volume2 size={14} />
                     )}

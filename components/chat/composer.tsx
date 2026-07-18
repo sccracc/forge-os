@@ -58,6 +58,7 @@ export function Composer({
   const [pickerIndex, setPickerIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [justTranscribed, setJustTranscribed] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [modelFlash, setModelFlash] = useState(false);
   const [sendFlying, setSendFlying] = useState(false);
@@ -141,6 +142,14 @@ export function Composer({
     const t = setTimeout(() => setModelFlash(false), 600);
     return () => clearTimeout(t);
   }, [model]);
+
+  // #23 · presentational beat when a transcription lands: droplet hop toward
+  // the input + capsule bloom (~700ms, purely decorative).
+  useEffect(() => {
+    if (!justTranscribed) return;
+    const t = setTimeout(() => setJustTranscribed(false), 700);
+    return () => clearTimeout(t);
+  }, [justTranscribed]);
 
   // autosize
   const resize = () => {
@@ -456,8 +465,12 @@ export function Composer({
       if (!res.ok) throw new Error(`transcribe ${res.status}`);
       const data = (await res.json()) as { text?: string };
       const text = (data.text ?? "").trim();
-      if (text) insertTranscript(text);
-      else toast.info("No speech detected. Try again.");
+      if (text) {
+        insertTranscript(text);
+        setJustTranscribed(true); // #23 · droplet + bloom beat
+      } else {
+        toast.info("No speech detected. Try again.");
+      }
     } catch {
       toast.error("Transcription failed. Please try again.");
     } finally {
@@ -607,7 +620,10 @@ export function Composer({
         </div>
       )}
 
-      <div className="composer" style={{ position: "relative" }}>
+      <div
+        className={`composer${justTranscribed ? " composer-bloom" : ""}`}
+        style={{ position: "relative" }}
+      >
         {/* slash / skills picker */}
         <AnimatePresence>
           {pickerOpen && (
@@ -812,11 +828,19 @@ export function Composer({
             {isTranscribing ? (
               <span className="mic-spinner" aria-hidden />
             ) : isRecording ? (
-              <span className="mic-stop" aria-hidden />
+              // #22 · live waveform bars while recording (button keeps stop semantics)
+              <span className="mic-wave" aria-hidden>
+                <i />
+                <i />
+                <i />
+                <i />
+              </span>
             ) : (
               <Mic />
             )}
           </button>
+
+          {justTranscribed && <span className="transcribe-drop" aria-hidden />}
 
           {streaming ? (
             <button className="send-btn stop" title="Stop" onClick={onStop}>

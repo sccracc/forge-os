@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useMessages } from "@/hooks/use-messages";
 import { useConversation } from "@/hooks/use-conversation";
@@ -48,6 +49,19 @@ export function ChatView({ conversationId }: { conversationId: string | null }) 
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true);
   const hydratedFor = useRef<string | null | undefined>(undefined);
+
+  // Family 44 — "Spring & refocus": the optimistically appended user message
+  // gets a transient .just-sent launch beat (~500ms). Regenerate reuses an
+  // already-visible user message, so only a genuinely new optimistic append
+  // (id not yet in the persisted path) triggers it.
+  const [justSentId, setJustSentId] = useState<string | null>(null);
+  const lastLaunchId = useRef<string | null>(streaming?.userMessageId ?? null);
+
+  // Family 45 — "Rise to focus": scroll-to-latest pill. A 1px sentinel sits at
+  // the live bottom of the thread; the pill shows once it drifts ≥400px out of
+  // view and smooth-scrolls back down on click. No other behavior.
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const [awayFromLatest, setAwayFromLatest] = useState(false);
 
   // Streaming→persisted handoff: when the stream clears, the persisted user +
   // assistant turn take its place in the SAME render. Remember which turn that
@@ -135,6 +149,33 @@ export function ChatView({ conversationId }: { conversationId: string | null }) 
     if (!el) return;
     stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
   };
+
+  // Family 44 trigger — fires once per new optimistic user message.
+  useEffect(() => {
+    const id = streaming?.userMessageId ?? null;
+    if (!id || id === lastLaunchId.current) return;
+    lastLaunchId.current = id;
+    if (activePath.some((n) => n.id === id)) return; // regenerate: already on screen
+    setJustSentId(id);
+  }, [streaming?.userMessageId, activePath]);
+  useEffect(() => {
+    if (!justSentId) return;
+    const t = setTimeout(() => setJustSentId(null), 600);
+    return () => clearTimeout(t);
+  }, [justSentId]);
+
+  // Family 45 — the pill appears when the bottom sentinel is ≥400px out of view.
+  useEffect(() => {
+    const root = scrollRef.current;
+    const target = bottomRef.current;
+    if (!root || !target) return;
+    const io = new IntersectionObserver(
+      ([entry]) => setAwayFromLatest(!entry.isIntersecting),
+      { root, rootMargin: "0px 0px 400px 0px" }
+    );
+    io.observe(target);
+    return () => io.disconnect();
+  }, []);
 
   const userInitial = (
     profile?.displayName?.[0] ||
@@ -267,6 +308,7 @@ export function ChatView({ conversationId }: { conversationId: string | null }) 
                 noEntrance={
                   node.role === "assistant" && node.parentId === handoffUserMsgId.current
                 }
+                justSent={node.id === justSentId}
               />
             ))}
             {streaming && (
@@ -302,7 +344,24 @@ export function ChatView({ conversationId }: { conversationId: string | null }) 
             )}
           </div>
         )}
+        <div ref={bottomRef} aria-hidden style={{ height: 1 }} />
       </div>
+
+      {awayFromLatest && (
+        <button
+          type="button"
+          className="scroll-latest"
+          aria-label="Scroll to latest messages"
+          onClick={() => {
+            const el = scrollRef.current;
+            if (!el) return;
+            const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            el.scrollTo({ top: el.scrollHeight, behavior: reduce ? "auto" : "smooth" });
+          }}
+        >
+          <ChevronDown size={14} />
+        </button>
+      )}
 
       <Composer
         onSend={handleSend}

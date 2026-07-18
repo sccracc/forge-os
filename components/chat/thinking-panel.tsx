@@ -67,7 +67,9 @@ export function ThinkingPanel({
         style={{ cursor: !active && hasBody ? "pointer" : "default" }}
       >
         <SparkGlyph className={`spark ${active ? "spinning" : ""}`} />
-        <span className={active ? "shimmer-text" : ""}>{label}</span>
+        {/* Family 35: `.think-label` is the stable hook for the panel-scoped
+            ember gradient (scope: `.thinking .think-label`). */}
+        <span className={`think-label${active ? " shimmer-text" : ""}`}>{label}</span>
         {!active && hasBody && (
           <ChevronDown className={`chev ${open ? "" : "collapsed"}`} />
         )}
@@ -80,12 +82,16 @@ export function ThinkingPanel({
             height: { duration: 0.28, ease: [0.2, 0.8, 0.2, 1] },
             opacity: { duration: 0.25, ease: "easeOut" },
           }}
-          style={{ overflow: "hidden" }}
+          style={{ overflow: "hidden", position: "relative" }}
         >
+          {/* Family 35 "Aurora study": decorative light that drifts behind the
+              reasoning while the panel is open (CSS-animated, absolute). */}
+          {open && <span className="think-aurora" aria-hidden />}
           <div
             ref={bodyRef}
             className="thinking-body"
-            style={{ maxHeight: 360, overflowY: "auto" }}
+            // position:relative keeps the text painting above the aurora
+            style={{ maxHeight: 360, overflowY: "auto", position: "relative" }}
           >
             {reasoning}
           </div>
