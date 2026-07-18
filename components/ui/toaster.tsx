@@ -23,15 +23,32 @@ export function Toaster() {
             <motion.div
               key={t.id}
               layout
-              initial={{ opacity: 0, y: 12, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 24, scale: 0.96 }}
-              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+              initial={{ opacity: 0, minWidth: 0, maxWidth: 44, whiteSpace: "nowrap" }}
+              animate={{
+                opacity: 1,
+                minWidth: 240,
+                maxWidth: 420,
+                transitionEnd: { whiteSpace: "normal" },
+              }}
+              exit={{
+                opacity: 0,
+                scale: 0.96,
+                transition: { duration: 0.25, ease: "easeOut" },
+              }}
+              transition={{ duration: 0.45, ease: [0.2, 0.8, 0.2, 1] }}
+              style={{ overflow: "hidden" }}
               className={`toast ${t.kind}`}
               role="status"
             >
               <Icon className="t-icon" />
-              <span style={{ flex: 1 }}>{t.message}</span>
+              <motion.span
+                style={{ flex: 1 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.18, duration: 0.25, ease: "easeOut" }}
+              >
+                {t.message}
+              </motion.span>
               <button
                 className="icon-btn"
                 onClick={() => dismiss(t.id)}

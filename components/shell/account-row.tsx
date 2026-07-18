@@ -106,13 +106,13 @@ export function AccountRow() {
       <AnimatePresence>
         {open && (
           <motion.div
-            className="acct-menu"
+            className="acct-menu menu-cascade"
             role="menu"
             onKeyDown={onMenuKeyDown}
-            initial={{ opacity: 0, y: 8, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.98 }}
-            transition={{ type: "spring", stiffness: 420, damping: 32 }}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.14, ease: "easeOut" }}
           >
             {email && <div className="acct-email">{email}</div>}
 

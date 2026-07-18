@@ -56,12 +56,12 @@ export function AgentMenu({ align = "left" }: { align?: "left" | "right" }) {
       <AnimatePresence>
         {open && (
           <motion.div
-            className={`popover agent-pop ${align}`}
+            className={`popover agent-pop menu-cascade ${align}`}
             role="menu"
-            initial={{ opacity: 0, y: 8, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.98 }}
-            transition={{ type: "spring", stiffness: 440, damping: 34 }}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.14, ease: "easeOut" }}
             style={{ bottom: "calc(100% + 8px)", [align]: 0 } as React.CSSProperties}
           >
             <div className="agent-pop-head">Agents</div>

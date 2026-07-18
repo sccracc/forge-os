@@ -62,8 +62,8 @@ function SignInCard() {
       }}
     >
       <motion.div
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 14, filter: "blur(8px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
         transition={{ duration: 0.5, ease: [0.2, 0.7, 0.3, 1] }}
         className="glass-strong"
         style={{

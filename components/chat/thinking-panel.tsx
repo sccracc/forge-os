@@ -76,7 +76,10 @@ export function ThinkingPanel({
         <motion.div
           initial={false}
           animate={{ height: open ? "auto" : 0, opacity: open ? 1 : 0 }}
-          transition={{ duration: 0.28, ease: [0.2, 0.8, 0.2, 1] }}
+          transition={{
+            height: { duration: 0.28, ease: [0.2, 0.8, 0.2, 1] },
+            opacity: { duration: 0.25, ease: "easeOut" },
+          }}
           style={{ overflow: "hidden" }}
         >
           <div

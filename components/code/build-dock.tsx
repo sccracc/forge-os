@@ -175,8 +175,8 @@ function BuildFileList({ rows, live }: { rows: FileRow[]; live: boolean }) {
             <motion.div
               key={r.path}
               layout
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 6, filter: "blur(4px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.18 }}
               className={`bf-row ${r.status}`}

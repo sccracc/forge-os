@@ -24,8 +24,9 @@ export function SkillStatus({
       {working && (
         <motion.div
           className="ss-working"
-          initial={{ opacity: 0, y: 3 }}
-          animate={{ opacity: 1, y: 0 }}
+          // Family 06 focus-rise: fades up while unblurring.
+          initial={{ opacity: 0, y: 3, filter: "blur(4px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.25 }}
         >
           <SparkGlyph className="ss-spark" />
@@ -57,8 +58,9 @@ function SkillRow({
       className="ss-row"
       // Entrance animation only while live — a persisted message (incl. the
       // streaming→persisted swap) mounts with its rows already settled.
-      initial={working ? { opacity: 0, y: 3 } : false}
-      animate={{ opacity: 1, y: 0 }}
+      // Family 06 focus-rise: one-shot blur-in, staggered per row.
+      initial={working ? { opacity: 0, y: 3, filter: "blur(4px)" } : false}
+      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       transition={{ delay: (working ? 0.15 : 0) + index * 0.06, duration: 0.25 }}
     >
       <button className="ss-line" onClick={() => setOpen((o) => !o)} aria-expanded={open}>

@@ -70,8 +70,8 @@ export function GeneratedImage({ done, loadingText, imageUrl, prompt, error, not
           <motion.div
             aria-hidden
             className="generated-image-shimmer"
-            animate={{ backgroundPositionX: ["160%", "-60%"] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+            animate={{ opacity: [0.45, 1, 0.45] }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
           />
         )}
         {!done && (
@@ -96,8 +96,8 @@ export function GeneratedImage({ done, loadingText, imageUrl, prompt, error, not
               if (el && el.complete && el.naturalWidth > 0) setLoaded(true);
             }}
             onLoad={() => setLoaded(true)}
-            initial={reveal ? { opacity: 0, scale: 1.05 } : false}
-            animate={loaded ? { opacity: 1, scale: 1 } : { opacity: 0 }}
+            initial={reveal ? { opacity: 0, scale: 1.05, filter: "blur(6px)" } : false}
+            animate={loaded ? { opacity: 1, scale: 1, filter: "blur(0px)" } : { opacity: 0 }}
             transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
           />
         )}

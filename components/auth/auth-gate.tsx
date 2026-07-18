@@ -20,8 +20,15 @@ function Splash() {
       <motion.div
         className="logo-mark"
         style={{ width: 48, height: 48 }}
-        animate={{ scale: [1, 1.08, 1], opacity: [0.8, 1, 0.8] }}
-        transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+        animate={{
+          scale: [1, 1.05, 1],
+          boxShadow: [
+            "0 2px 8px var(--amber-glow), 0 0 0px var(--amber-glow)",
+            "0 4px 22px var(--amber-glow), 0 0 26px var(--amber-glow)",
+            "0 2px 8px var(--amber-glow), 0 0 0px var(--amber-glow)",
+          ],
+        }}
+        transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
       >
         <ForgeMark style={{ width: 26, height: 26, color: "var(--on-accent)" }} />
       </motion.div>

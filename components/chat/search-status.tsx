@@ -56,10 +56,11 @@ export function SearchStatus({ searches, live }: { searches?: SearchState[]; liv
                       <motion.span
                         key="check"
                         className="sc-icon"
-                        initial={{ opacity: 0, scale: 0.4, rotate: -90 }}
-                        animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                        exit={{ opacity: 0, scale: 0.4 }}
-                        transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                        // Family 19 unified spring: 0.5 → ~1.1 overshoot → 1, no rotation.
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.5 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 22 }}
                       >
                         <Check size={13} />
                       </motion.span>

@@ -220,8 +220,8 @@ export function Sidebar() {
                         <motion.div
                           key={c.id}
                           layout
-                          initial={{ opacity: 0, x: -12 }}
-                          animate={{ opacity: 1, x: 0 }}
+                          initial={{ opacity: 0, x: -12, filter: "blur(4px)" }}
+                          animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                           exit={{ opacity: 0, x: 14 }}
                           transition={{ duration: 0.26, ease: [0.2, 0.8, 0.2, 1] }}
                           className={`chat-item ${activeCid === c.id ? "active" : ""}`}

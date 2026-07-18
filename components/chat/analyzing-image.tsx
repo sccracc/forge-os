@@ -14,6 +14,7 @@ export function AnalyzingImage() {
         <motion.span
           className="analyzing-arc"
           aria-hidden
+          style={{ filter: "drop-shadow(0 0 3px var(--amber-glow))" }}
           animate={{ rotate: 360 }}
           transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
         />

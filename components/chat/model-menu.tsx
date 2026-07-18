@@ -44,11 +44,11 @@ export function ModelMenu({
 
   return (
     <motion.div
-      className={`menu${align === "right" ? " menu-right" : ""}`}
-      initial={{ opacity: 0, scale: 0.97, y: 8, x: tx }}
-      animate={{ opacity: 1, scale: 1, y: 0, x: tx }}
-      exit={{ opacity: 0, scale: 0.97, y: 8, x: tx }}
-      transition={{ type: "spring", stiffness: 420, damping: 32 }}
+      className={`menu menu-cascade${align === "right" ? " menu-right" : ""}`}
+      initial={{ opacity: 0, y: 4, x: tx }}
+      animate={{ opacity: 1, y: 0, x: tx }}
+      exit={{ opacity: 0, y: 4, x: tx }}
+      transition={{ duration: 0.14, ease: "easeOut" }}
       onClick={(e) => e.stopPropagation()}
       role="menu"
     >
@@ -133,10 +133,10 @@ export function ModelMenu({
         </button>
         {submenu && (
           <motion.div
-            className="submenu"
-            initial={{ opacity: 0, scale: 0.97, x: align === "right" ? 6 : -6 }}
-            animate={{ opacity: 1, scale: 1, x: 0 }}
-            transition={{ duration: 0.16 }}
+            className="submenu menu-cascade"
+            initial={{ opacity: 0, x: align === "right" ? 6 : -6 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.14, ease: "easeOut" }}
             role="menu"
           >
             <div className="submenu-label">Effort</div>
